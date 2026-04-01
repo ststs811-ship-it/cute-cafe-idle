@@ -409,6 +409,20 @@ const AUTO_UNLOCKS = [
   },
 ];
 
+const TARGET_BALANCE = {
+  baseValue: 24,
+  dayGrowth: 3,
+  projectedSalesWeight: 1,
+  reputationWeight: 4,
+  stretchBase: 1.1,
+  stretchPerDay: 0.025,
+};
+
+const REPUTATION_BALANCE = {
+  customerDivisor: 18,
+  targetBonus: 1,
+};
+
 const BOOST_DEFS = {
   hustle: {
     id: 'hustle',
@@ -939,10 +953,11 @@ function initializeDayTarget(run) {
     run.salesMultiplier *
     state.permanent.dailyModifierStrength *
     (run.durationMs / 1000);
-  run.targetBaseValue = 18 + state.daysCompleted * 2.5;
-  run.targetGrowthValue = projectedBaseSales * 0.58;
-  run.targetDemandValue = state.reputation * 1.8;
-  run.targetStretchMultiplier = 1.04 + Math.min(state.daysCompleted, 20) * 0.012;
+  run.targetBaseValue = TARGET_BALANCE.baseValue + state.daysCompleted * TARGET_BALANCE.dayGrowth;
+  run.targetGrowthValue = projectedBaseSales * TARGET_BALANCE.projectedSalesWeight;
+  run.targetDemandValue = state.reputation * TARGET_BALANCE.reputationWeight;
+  run.targetStretchMultiplier =
+    TARGET_BALANCE.stretchBase + Math.min(state.daysCompleted, 20) * TARGET_BALANCE.stretchPerDay;
   run.dayTarget = Math.round(
     (run.targetBaseValue + run.targetGrowthValue + run.targetDemandValue) *
       run.targetStretchMultiplier,
@@ -1071,7 +1086,8 @@ function finishDay() {
   const reputationGain = Math.max(
     1,
     Math.round(
-      (roundedCustomers / 10 + (achievedTarget ? 1 + run.reputationOnTargetBonus : 0)) *
+      (roundedCustomers / REPUTATION_BALANCE.customerDivisor +
+        (achievedTarget ? REPUTATION_BALANCE.targetBonus + run.reputationOnTargetBonus : 0)) *
         state.permanent.reputationGainMultiplier *
         run.reputationGainMultiplier,
     ),
