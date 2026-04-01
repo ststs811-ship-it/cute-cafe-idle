@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'cuteCafeIdleSaveV1';
-const APP_VERSION = '1.3.0';
+const APP_VERSION = '1.4.0';
 
 const DAILY_MODIFIERS = [
   {
@@ -938,6 +938,12 @@ const elements = {
 const state = loadState();
 let tickerHandle = 0;
 let saveHandle = 0;
+const uiFeedback = {
+  lastMoney: 0,
+  lastSalePulseAt: 0,
+  lastCelebratedSales: 0,
+  targetReachedInRun: false,
+};
 
 init();
 
@@ -1456,6 +1462,7 @@ function startDay() {
   closeEventOverlay();
   state.operationView = 'live';
   renderAll();
+  showToast('今日もオープン', getOpeningMessage(), 'day-start');
   saveState(state);
 }
 
@@ -1672,7 +1679,23 @@ function finishDay() {
     achievements: newAchievements.map((entry) => entry.name),
   };
 
+  if (achievedTarget) {
+    showToast(
+      '売上目標達成',
+      `今日は ${formatNumber(roundedDayMoney)} 売り上げました。ごほうびがふわっと届きます。`,
+      'target',
+    );
+  } else {
+    showToast(
+      '営業終了',
+      `今日は ${formatNumber(roundedDayMoney)} の売上でした。次の工夫でまた伸ばせます。`,
+      'day-end',
+    );
+  }
+
   state.dayRun = createIdleRunState();
+  uiFeedback.lastCelebratedSales = 0;
+  uiFeedback.targetReachedInRun = false;
   state.preDay.modifierRerollUsed = false;
   state.preDay.forecastModifierId = chooseRandom(DAILY_MODIFIERS).id;
   state.operationView = 'result';
@@ -2717,4 +2740,418 @@ function getNodeName(nodeId) {
 function getResearchName(researchId) {
   const research = RESEARCH_NODES.find((entry) => entry.id === researchId);
   return research ? research.name : researchId;
+}
+
+function triggerElementBurst(element, className = 'soft-pop') {
+  if (!element) {
+    return;
+  }
+  element.classList.remove(className);
+  void element.offsetWidth;
+  element.classList.add(className);
+  window.setTimeout(() => {
+    element.classList.remove(className);
+  }, 650);
+}
+
+function maybePulseMainSales() {
+  const now = Date.now();
+  const moneyDelta = state.money - uiFeedback.lastMoney;
+  if (moneyDelta >= 6 && now - uiFeedback.lastSalePulseAt > 1300) {
+    triggerElementBurst(elements.moneyValue, 'number-pop');
+    uiFeedback.lastSalePulseAt = now;
+  }
+  uiFeedback.lastMoney = state.money;
+}
+
+function maybeCelebrateRunMoments(targetValue) {
+  const run = state.dayRun;
+  if (!run.active) {
+    uiFeedback.lastCelebratedSales = 0;
+    uiFeedback.targetReachedInRun = false;
+    return;
+  }
+
+  const now = Date.now();
+  if (
+    run.dayMoney >= uiFeedback.lastCelebratedSales + 18 &&
+    now - uiFeedback.lastSalePulseAt > 1100
+  ) {
+    triggerElementBurst(elements.dayMoneyValue, 'number-pop');
+    uiFeedback.lastCelebratedSales = run.dayMoney;
+    uiFeedback.lastSalePulseAt = now;
+  }
+
+  if (!uiFeedback.targetReachedInRun && run.dayMoney >= targetValue) {
+    uiFeedback.targetReachedInRun = true;
+    triggerElementBurst(elements.dailyTargetLabel, 'target-pop');
+    triggerElementBurst(elements.dayProgressFill, 'target-fill-pop');
+    showToast('目標が見えてきました', '今日の売上目標に手が届きました。あと少しです。', 'target');
+  }
+}
+
+function getOpeningMessage() {
+  const modifier = getModifierById(state.preDay.forecastModifierId);
+  const activeCombo = getActiveComboDefinition();
+  if (activeCombo) {
+    return `街のようすは「${modifier.name}」。今日は「${activeCombo.name}」がぴったり合いそうです。`;
+  }
+  if (state.preDay.selectedStyleId || state.preDay.selectedMenuId || state.preDay.selectedPrepId) {
+    return `街のようすは「${modifier.name}」。今日の仕込みがきれいにまとまりました。`;
+  }
+  return `街のようすは「${modifier.name}」。いつものペースで、やさしく開店しましょう。`;
+}
+
+function getEventMessage(eventDef) {
+  if (!eventDef) {
+    return '営業の途中で、ちいさなできごとが起こりました。';
+  }
+  return `${eventDef.title}。ちょっとした選び方で今日の空気が変わります。`;
+}
+
+function evaluateAchievements() {
+  const newlyUnlocked = [];
+  const previousCount = getAchievementCount();
+  for (const achievement of ACHIEVEMENTS) {
+    if (state.achievementsUnlocked.includes(achievement.id)) {
+      continue;
+    }
+    if (achievement.condition(state)) {
+      state.achievementsUnlocked.push(achievement.id);
+      state.unlockPoints += 1;
+      state.insight += 1;
+      newlyUnlocked.push(achievement);
+      showToast(
+        `実績達成: ${achievement.name}`,
+        `${achievement.description} / 解放ポイント +1 / ひらめき +1`,
+        'achievement',
+      );
+    }
+  }
+  applyAchievementSystemUnlocks(true, previousCount);
+  return newlyUnlocked;
+}
+
+function offerPerkChoices() {
+  const run = state.dayRun;
+  run.perkOffered = true;
+  run.selectionPaused = true;
+  run.overlayMode = 'perk';
+  const count = state.systems.extraPerkChoice ? 4 : 3;
+  const options = shuffle([...PERK_POOL]).slice(0, count);
+  elements.perkOptions.innerHTML = '';
+  for (const perk of options) {
+    const button = document.createElement('button');
+    button.className = 'perk-button';
+    button.innerHTML = `<strong>${perk.name}</strong><div>${perk.description}</div>`;
+    button.addEventListener('click', () => {
+      perk.apply(state.dayRun);
+      state.dayRun.perkChosen = true;
+      state.stats.perkSelections += 1;
+      closePerkOverlay();
+      showToast('今日のひと工夫', `${perk.name} を選びました。`, 'perk');
+      evaluateAchievements();
+      renderAll();
+      saveState(state);
+    });
+    elements.perkOptions.appendChild(button);
+  }
+  elements.perkOverlay.classList.remove('hidden');
+  elements.perkOverlay.setAttribute('aria-hidden', 'false');
+}
+
+function offerDayEvent() {
+  const run = state.dayRun;
+  run.eventOffered = true;
+  run.selectionPaused = true;
+  run.overlayMode = 'event';
+  const eventDef = chooseRandom(DAY_EVENT_DEFS);
+  run.eventId = eventDef.id;
+  elements.eventTitle.textContent = eventDef.title;
+  elements.eventDescription.textContent = eventDef.description;
+  showToast('営業中のひとできごと', getEventMessage(eventDef), 'event');
+  elements.eventOptions.innerHTML = '';
+  for (const choice of eventDef.choices) {
+    const button = document.createElement('button');
+    button.className = 'perk-button';
+    button.innerHTML = `<strong>${choice.label}</strong><div>${choice.detail}</div>`;
+    button.addEventListener('click', () => {
+      choice.apply(run);
+      run.eventResolved = true;
+      renderDayEventStatus();
+      closeEventOverlay();
+      renderAll();
+      saveState(state);
+    });
+    elements.eventOptions.appendChild(button);
+  }
+  renderDayEventStatus(eventDef);
+  elements.eventOverlay.classList.remove('hidden');
+  elements.eventOverlay.setAttribute('aria-hidden', 'false');
+}
+
+function renderResources() {
+  elements.moneyValue.textContent = formatNumber(state.money);
+  elements.lifetimeMoney.textContent = formatNumber(state.lifetimeMoney);
+  elements.reputationValue.textContent = formatWholeNumber(state.reputation);
+  elements.unlockPointsValue.textContent = formatWholeNumber(state.unlockPoints);
+  elements.insightValue.textContent = formatWholeNumber(state.insight);
+  elements.dayCountValue.textContent = `${state.daysCompleted}日`;
+  elements.streakLabel.textContent = `連続目標達成 ${state.stats.currentTargetStreak}日`;
+  elements.achievementProgress.textContent = `実績 ${getAchievementCount()} / ${ACHIEVEMENTS.length}`;
+  elements.cafeGrade.textContent = getCafeGradeLabel();
+  maybePulseMainSales();
+}
+
+function renderOperations(includePrepOptions = true) {
+  const run = state.dayRun;
+  const targetValue = run.active ? getCurrentTargetValue() : getPreviewTargetValue();
+  elements.dayStatus.dataset.state = run.active
+    ? run.selectionPaused
+      ? 'paused'
+      : 'active'
+    : 'ready';
+  elements.dayStatus.textContent = run.active
+    ? run.selectionPaused
+      ? run.overlayMode === 'event'
+        ? 'イベント対応中'
+        : 'ひと工夫を選択中'
+      : '営業中'
+    : '準備中';
+  elements.dailyModifierName.textContent = run.modifierName;
+  elements.dailyModifierDesc.textContent = run.modifierDescription;
+  elements.timeLeftLabel.textContent = run.active
+    ? `残り ${formatSeconds(Math.max(0, run.durationMs - run.elapsedMs))}`
+    : `営業時間 ${formatSeconds(run.durationMs)}`;
+  elements.dailyTargetLabel.textContent = `本日の売上目標 ${formatNumber(targetValue)}`;
+  elements.dayProgressFill.style.width = `${Math.min(100, (run.elapsedMs / run.durationMs) * 100)}%`;
+  elements.dayMoneyValue.textContent = formatNumber(run.dayMoney);
+  elements.dayCustomersValue.textContent = `${Math.floor(run.dayCustomers)}人`;
+  elements.salesRateValue.textContent = `${formatNumber(getProjectedSalesPerSecond())}/秒`;
+  elements.basePriceValue.textContent = formatNumber(getCurrentBasePrice());
+  elements.visitorRateValue.textContent = `${formatNumber(getCurrentVisitorRate())}人/秒`;
+  elements.reputationEffectValue.textContent = `x${formatNumber(getReputationEffect(), 2)}`;
+  elements.todayMultiplierValue.textContent = `x${formatNumber(getTodayMultiplier(), 2)}`;
+  elements.gradeBonusRow.classList.toggle('hidden', getAchievementCount() < 6);
+  elements.gradeBonusValue.textContent = `x${formatNumber(getAchievementBonusMultiplier(), 2)}`;
+  elements.startDayButton.disabled = run.active;
+  maybeCelebrateRunMoments(targetValue);
+  renderOperationLayerState();
+  renderDayEventStatus();
+  if (includePrepOptions) {
+    renderPrepOptions();
+  }
+  renderRunNotes();
+  renderLastResult();
+}
+
+function renderRunNotes() {
+  const items = state.dayRun.notes.length ? state.dayRun.notes : ['まだ特別な工夫はありません'];
+  elements.runBonusList.innerHTML = items.map((note) => `<li>${note}</li>`).join('');
+}
+
+function renderLastResult() {
+  if (!state.lastResult) {
+    elements.lastResultBox.textContent = '営業終了後に、ここへ今日の結果が表示されます。';
+    return;
+  }
+  const result = state.lastResult;
+  const achievementText =
+    result.achievements.length > 0 ? ` / 新しい実績: ${result.achievements.join(' / ')}` : '';
+  const flavorParts = [result.styleName, result.serviceName, result.comboName].filter(Boolean);
+  const flavorText = flavorParts.length > 0 ? ` / ${flavorParts.join(' / ')}` : '';
+  elements.lastResultBox.textContent =
+    `${result.dayNumber}日目: 売上 ${formatNumber(result.sales)} / 目標 ${formatNumber(result.targetValue)}、来客 ${result.customers}人、評判 +${result.reputationGain}、解放ポイント +${result.unlockGain}、ひらめき +${result.insightGain}` +
+    ` / ${result.modifierName}${flavorText}${result.achievedTarget ? ' / 売上目標達成' : ' / 売上目標は未達'}` +
+    `${achievementText}`;
+}
+
+function renderDayEventStatus(eventDef = null) {
+  if (!elements.dayEventBox) {
+    return;
+  }
+  if (!state.systems.dayEventUnlocked) {
+    elements.dayEventBox.textContent =
+      '研究が進むと、営業中に小さなできごとが起こるようになります。';
+    return;
+  }
+  if (!state.dayRun.active) {
+    elements.dayEventBox.textContent = '営業中に1回だけ、小さなできごとが舞い込みます。';
+    return;
+  }
+  if (!state.dayRun.eventOffered) {
+    elements.dayEventBox.textContent =
+      '今日はまだ静かです。営業が進むと、ちいさなできごとが起こるかもしれません。';
+    return;
+  }
+  if (!state.dayRun.eventResolved) {
+    const currentEvent =
+      eventDef || DAY_EVENT_DEFS.find((entry) => entry.id === state.dayRun.eventId) || null;
+    elements.dayEventBox.textContent = currentEvent
+      ? `${currentEvent.title} の対応を選べます。`
+      : '営業中のできごとが発生しています。';
+    return;
+  }
+  elements.dayEventBox.textContent =
+    '今日のできごとにはもう対応済みです。営業の流れにやさしく反映されています。';
+}
+
+function renderCodex() {
+  if (!elements.codexGrid || !elements.codexSummary) {
+    return;
+  }
+  elements.codexSummary.textContent = `${state.discoveredCombos.length} / ${COMBO_DEFS.length} 発見`;
+  elements.codexGrid.innerHTML = COMBO_DEFS.map((combo) => {
+    const discovered = state.discoveredCombos.includes(combo.id);
+    const unlocked = isComboUnlocked(combo);
+    const cardClass = discovered ? 'discovered' : unlocked ? 'available' : 'locked';
+    const title = discovered ? combo.name : unlocked ? '未発見コンボ' : '？？？';
+    const body = discovered
+      ? combo.description
+      : unlocked
+        ? combo.hint || '組み合わせを試して見つけてみましょう。'
+        : combo.hint || '条件を満たすと姿を見せます。';
+    const status = discovered ? '発見済み' : unlocked ? '未発見' : '条件未達';
+    return `
+      <article class="codex-card ${cardClass}">
+        <h3>${title}</h3>
+        <p>${body}</p>
+        <div class="reward">${status}</div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderBoosts() {
+  const now = Date.now();
+  const boosts = [...getAvailableBoosts()];
+  for (const boost of Object.values(BOOST_DEFS)) {
+    const exists = boosts.some((entry) => entry.id === boost.id);
+    const status = state.dayRun.boostStates[boost.id];
+    if (!exists && status && status.activeUntil > now) {
+      boosts.push(boost);
+    }
+  }
+  elements.boostGrid.innerHTML = '';
+  for (const boost of boosts) {
+    const boostState = state.dayRun.boostStates[boost.id] || { activeUntil: 0, cooldownUntil: 0 };
+    const activeLeft = Math.max(0, boostState.activeUntil - now);
+    const cooldownLeft = Math.max(0, boostState.cooldownUntil - now);
+    const canUseManually = getAvailableBoosts().some((entry) => entry.id === boost.id);
+    const ready =
+      canUseManually && state.dayRun.active && cooldownLeft === 0 && !state.dayRun.selectionPaused;
+    const wrapper = document.createElement('article');
+    wrapper.className = `boost-card ${
+      activeLeft > 0 ? 'active-state' : ready ? 'ready' : cooldownLeft > 0 ? 'cooldown' : ''
+    }`.trim();
+    wrapper.innerHTML = `
+      <h3>${boost.name}</h3>
+      <div class="boost-meta">${boost.description}</div>
+      <div class="boost-line">
+        <span>${getBoostStatusLabel({
+          activeLeft,
+          cooldownLeft,
+          canUseManually,
+          runActive: state.dayRun.active,
+        })}</span>
+        <button class="boost-button" data-boost-id="${boost.id}" ${ready ? '' : 'disabled'}>${canUseManually ? '使う' : '自動発動'}</button>
+      </div>
+    `;
+    elements.boostGrid.appendChild(wrapper);
+  }
+  updateBoostDisplays(now);
+}
+
+function updateBoostDisplays(now = Date.now()) {
+  for (const card of elements.boostGrid.querySelectorAll('.boost-card')) {
+    const button = card.querySelector('[data-boost-id]');
+    if (!button) {
+      continue;
+    }
+
+    const boostId = button.dataset.boostId;
+    const boost = BOOST_DEFS[boostId];
+    const boostState = state.dayRun.boostStates[boostId] || { activeUntil: 0, cooldownUntil: 0 };
+    const activeLeft = Math.max(0, boostState.activeUntil - now);
+    const cooldownLeft = Math.max(0, boostState.cooldownUntil - now);
+    const canUseManually = getAvailableBoosts().some((entry) => entry.id === boostId);
+    const ready =
+      canUseManually && state.dayRun.active && cooldownLeft === 0 && !state.dayRun.selectionPaused;
+
+    card.className = `boost-card ${
+      activeLeft > 0 ? 'active-state' : ready ? 'ready' : cooldownLeft > 0 ? 'cooldown' : ''
+    }`.trim();
+
+    const statusLabel = card.querySelector('.boost-line span');
+    if (statusLabel) {
+      statusLabel.textContent = getBoostStatusLabel({
+        activeLeft,
+        cooldownLeft,
+        canUseManually,
+        runActive: state.dayRun.active,
+      });
+    }
+
+    button.disabled = !ready;
+    button.textContent = canUseManually ? '使う' : '自動発動';
+
+    if (boost?.description) {
+      const meta = card.querySelector('.boost-meta');
+      if (meta) {
+        meta.textContent = boost.description;
+      }
+    }
+  }
+}
+
+function getCafeGradeLabel() {
+  const count = getAchievementCount();
+  if (count >= 16) {
+    return 'みんなの憧れカフェ';
+  }
+  if (count >= 10) {
+    return '街で評判のカフェ';
+  }
+  if (count >= 6) {
+    return 'やさしい人気店';
+  }
+  if (count >= 3) {
+    return 'がんばり中のカフェ';
+  }
+  return 'ふつうの喫茶店';
+}
+
+function getBoostStatusLabel({ activeLeft, cooldownLeft, canUseManually, runActive }) {
+  if (activeLeft > 0) {
+    return `効果中 ${formatSeconds(activeLeft)}`;
+  }
+  if (cooldownLeft > 0) {
+    return `再使用まで ${formatSeconds(cooldownLeft)}`;
+  }
+  if (!runActive) {
+    return canUseManually ? '営業開始後に使用' : '開店時に自動発動';
+  }
+  return canUseManually ? '準備完了' : '自動発動待ち';
+}
+
+function formatSeconds(ms) {
+  const seconds = Math.ceil(ms / 1000);
+  return `${seconds}秒`;
+}
+
+function showToast(title, body, tone = 'default') {
+  const toast = document.createElement('div');
+  toast.className = `toast ${tone}`.trim();
+  const heading = document.createElement('strong');
+  heading.textContent = title;
+  const copy = document.createElement('div');
+  copy.textContent = body;
+  toast.append(heading, copy);
+  elements.toastStack.appendChild(toast);
+  window.setTimeout(
+    () => {
+      toast.remove();
+    },
+    tone === 'achievement' ? 3600 : 3000,
+  );
 }
