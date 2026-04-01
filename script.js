@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'cuteCafeIdleSaveV1';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 
 const DAILY_MODIFIERS = [
   {
@@ -1374,7 +1374,9 @@ function renderBoosts() {
     const ready =
       canUseManually && state.dayRun.active && cooldownLeft === 0 && !state.dayRun.selectionPaused;
     const wrapper = document.createElement('article');
-    wrapper.className = 'boost-card';
+    wrapper.className = `boost-card ${
+      activeLeft > 0 ? 'active-state' : ready ? 'ready' : cooldownLeft > 0 ? 'cooldown' : ''
+    }`.trim();
     wrapper.innerHTML = `
       <h3>${boost.name}</h3>
       <div class="boost-meta">${boost.description}</div>
@@ -1535,7 +1537,7 @@ function renderResearch() {
     const ready = research.requires.every((required) => hasResearch(required));
     const canBuy = ready && !unlocked && state.insight >= research.cost;
     const card = document.createElement('article');
-    card.className = `research-card ${unlocked ? 'unlocked' : 'locked'}`;
+    card.className = `research-card ${unlocked ? 'unlocked' : canBuy ? 'ready' : 'locked'}`;
     const prereqText =
       research.requires.length === 0 ? 'なし' : research.requires.map(getResearchName).join(' / ');
     card.innerHTML = `
@@ -1594,7 +1596,7 @@ function renderTree() {
     const ready = node.requires.every((required) => state.unlockedNodes.includes(required));
     const canBuy = ready && !purchased && state.unlockPoints >= node.cost;
     const card = document.createElement('article');
-    card.className = `tree-card ${purchased ? 'purchased' : 'locked'}`;
+    card.className = `tree-card ${purchased ? 'purchased' : canBuy ? 'ready' : 'locked'}`;
     const prereqText =
       node.requires.length === 0 ? 'なし' : node.requires.map(getNodeName).join(' / ');
     card.innerHTML = `
