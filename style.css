@@ -790,6 +790,38 @@ h3 {
   margin-top: 12px;
 }
 
+.prep-section {
+  margin-top: 12px;
+  border-top: 1px dashed rgba(143, 103, 93, 0.18);
+  padding-top: 12px;
+}
+
+.prep-section summary {
+  cursor: pointer;
+  list-style: none;
+  color: var(--brown-strong);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.prep-section summary::-webkit-details-marker {
+  display: none;
+}
+
+.prep-section summary::after {
+  content: '＋';
+  float: right;
+  color: var(--text-soft);
+}
+
+.prep-section[open] summary::after {
+  content: '−';
+}
+
+.prep-section .chip-row {
+  margin-top: 14px;
+}
+
 .select-chip,
 .inline-button {
   padding: 10px 13px;

@@ -421,12 +421,16 @@ const AUTO_UNLOCKS = [
 ];
 
 const TARGET_BALANCE = {
-  baseValue: 24,
-  dayGrowth: 3,
-  projectedSalesWeight: 1,
-  reputationWeight: 4,
-  stretchBase: 1.1,
-  stretchPerDay: 0.025,
+  baseValue: 18,
+  dayGrowth: 2.4,
+  projectedSalesWeight: 0.58,
+  reputationWeight: 2.6,
+  stretchBase: 0.82,
+  stretchPerDay: 0.018,
+  earlyGraceBase: 0.72,
+  earlyGracePerDay: 0.05,
+  earlyGraceCapDay: 6,
+  minimumTarget: 28,
 };
 
 const REPUTATION_BALANCE = {
@@ -1690,6 +1694,7 @@ function startDay() {
   initializeDayTarget(state.dayRun);
   initializeBoostStates(state.dayRun);
   applyStartingBoosts(state.dayRun);
+  closePerkOverlay();
   closeEventOverlay();
   state.operationView = 'live';
   renderAll();
@@ -1719,9 +1724,19 @@ function initializeDayTarget(run) {
   run.targetDemandValue = state.reputation * TARGET_BALANCE.reputationWeight;
   run.targetStretchMultiplier =
     TARGET_BALANCE.stretchBase + Math.min(state.daysCompleted, 20) * TARGET_BALANCE.stretchPerDay;
-  run.dayTarget = Math.round(
-    (run.targetBaseValue + run.targetGrowthValue + run.targetDemandValue) *
-      run.targetStretchMultiplier,
+  run.targetEarlyGraceMultiplier = Math.min(
+    1,
+    TARGET_BALANCE.earlyGraceBase +
+      Math.min(state.daysCompleted, TARGET_BALANCE.earlyGraceCapDay) *
+        TARGET_BALANCE.earlyGracePerDay,
+  );
+  run.dayTarget = Math.max(
+    TARGET_BALANCE.minimumTarget,
+    Math.round(
+      (run.targetBaseValue + run.targetGrowthValue + run.targetDemandValue) *
+        run.targetStretchMultiplier *
+        run.targetEarlyGraceMultiplier,
+    ),
   );
 }
 
@@ -1799,8 +1814,17 @@ function tick() {
   run.elapsedMs = Math.min(run.elapsedMs + delta, run.durationMs);
   updateRunRevenue(delta / 1000, now);
 
+  if (run.elapsedMs >= run.durationMs) {
+    finishDay();
+    return;
+  }
+
+  const remainingMs = Math.max(0, run.durationMs - run.elapsedMs);
+  const perkMinRemainingMs = Math.min(12000, run.durationMs * 0.24);
+  const eventMinRemainingMs = Math.min(9000, run.durationMs * 0.18);
+
   const perkUnlockTime = run.durationMs * 0.38 * run.perkOfferTimeMultiplier;
-  if (!run.perkOffered && run.elapsedMs >= perkUnlockTime) {
+  if (!run.perkOffered && run.elapsedMs >= perkUnlockTime && remainingMs > perkMinRemainingMs) {
     offerPerkChoices();
   }
 
@@ -1809,13 +1833,10 @@ function tick() {
     state.systems.dayEventUnlocked &&
     !run.eventOffered &&
     !run.selectionPaused &&
-    run.elapsedMs >= eventUnlockTime
+    run.elapsedMs >= eventUnlockTime &&
+    remainingMs > eventMinRemainingMs
   ) {
     offerDayEvent();
-  }
-
-  if (run.elapsedMs >= run.durationMs) {
-    finishDay();
   }
 
   renderDynamic();
@@ -2395,11 +2416,35 @@ function updateBoostDisplays(now = Date.now()) {
   }
 }
 
+function renderChoiceSection({
+  title,
+  description,
+  countLabel,
+  rowId,
+  cardClass = '',
+  open = false,
+}) {
+  const articleClass = ['prep-option', cardClass].filter(Boolean).join(' ');
+  return `
+    <article class="${articleClass}">
+      <h3>${title}</h3>
+      <p>${description}</p>
+      <details class="prep-section" ${open ? 'open' : ''}>
+        <summary>${countLabel}</summary>
+        <div class="chip-row" id="${rowId}"></div>
+      </details>
+    </article>
+  `;
+}
+
 function renderPrepOptions() {
   ensurePreDaySelections();
   const isActive = state.dayRun.active;
   const cards = [];
   const activeCombo = getActiveComboDefinition();
+  const availableMenus = getAvailableMenuOptions();
+  const availableStyles = getAvailableStyleOptions();
+  const availablePreps = getAvailablePrepOptions();
   const specialServices = getAvailableSpecialServices();
   const hasAnyUnlock =
     state.systems.prepBoostUnlocked ||
@@ -2425,43 +2470,51 @@ function renderPrepOptions() {
   }
 
   if (state.systems.styleChoiceUnlocked) {
-    cards.push(`
-      <article class="prep-option feature-option">
-        <h3>営業スタイル</h3>
-        <p>その日の売り方をひとつ選んで、営業の流れを少し変えられます。</p>
-        <div class="chip-row" id="style-chip-row"></div>
-      </article>
-    `);
+    cards.push(
+      renderChoiceSection({
+        title: '営業スタイル',
+        description: 'その日の売り方をひとつ選んで、営業の流れを少し変えられます。',
+        countLabel: `${availableStyles.length}種類から選ぶ`,
+        rowId: 'style-chip-row',
+        cardClass: 'feature-option',
+        open: true,
+      }),
+    );
   }
 
   if (state.systems.menuChoiceUnlocked) {
-    cards.push(`
-      <article class="prep-option">
-        <h3>本日のおすすめメニュー</h3>
-        <p>営業前に1つ選べます。</p>
-        <div class="chip-row" id="menu-chip-row"></div>
-      </article>
-    `);
+    cards.push(
+      renderChoiceSection({
+        title: '本日のおすすめメニュー',
+        description: '営業前に1つ選べます。',
+        countLabel: `${availableMenus.length}種類から選ぶ`,
+        rowId: 'menu-chip-row',
+        open: true,
+      }),
+    );
   }
 
   if (state.systems.specialServiceUnlocked) {
-    cards.push(`
-      <article class="prep-option special-option">
-        <h3>特別営業</h3>
-        <p>実績で増える特別な営業です。今日はひとつだけ選べます。</p>
-        <div class="chip-row" id="service-chip-row"></div>
-      </article>
-    `);
+    cards.push(
+      renderChoiceSection({
+        title: '特別営業',
+        description: '実績で増える特別な営業です。今日はひとつだけ選べます。',
+        countLabel: `${specialServices.length}種類から選ぶ`,
+        rowId: 'service-chip-row',
+        cardClass: 'special-option',
+      }),
+    );
   }
 
   if (state.systems.prepChoiceUnlocked) {
-    cards.push(`
-      <article class="prep-option">
-        <h3>仕込み</h3>
-        <p>営業前に1つだけ準備を選べます。</p>
-        <div class="chip-row" id="prep-chip-row"></div>
-      </article>
-    `);
+    cards.push(
+      renderChoiceSection({
+        title: '仕込み',
+        description: '営業前に1つだけ準備を選べます。',
+        countLabel: `${availablePreps.length}種類から選ぶ`,
+        rowId: 'prep-chip-row',
+      }),
+    );
   }
 
   if (state.systems.comboRecipeUnlocked) {
@@ -2475,13 +2528,14 @@ function renderPrepOptions() {
   }
 
   if (state.systems.prepBoostUnlocked) {
-    cards.push(`
-      <article class="prep-option">
-        <h3>営業前ブースト</h3>
-        <p>${getPreDayBoostSlotCount()}つまで選べます。</p>
-        <div class="chip-row" id="preboost-chip-row"></div>
-      </article>
-    `);
+    cards.push(
+      renderChoiceSection({
+        title: '営業前ブースト',
+        description: `${getPreDayBoostSlotCount()}つまで選べます。`,
+        countLabel: `${PRE_DAY_BOOSTS.length}種類から選ぶ`,
+        rowId: 'preboost-chip-row',
+      }),
+    );
   }
 
   if (cards.length === 0) {
@@ -2532,7 +2586,7 @@ function renderPrepOptions() {
 
   const menuRow = document.getElementById('menu-chip-row');
   if (menuRow) {
-    for (const menu of getAvailableMenuOptions()) {
+    for (const menu of availableMenus) {
       const button = document.createElement('button');
       button.className = `select-chip ${state.preDay.selectedMenuId === menu.id ? 'active' : ''}`;
       button.disabled = isActive;
@@ -2549,7 +2603,7 @@ function renderPrepOptions() {
 
   const styleRow = document.getElementById('style-chip-row');
   if (styleRow) {
-    for (const style of getAvailableStyleOptions()) {
+    for (const style of availableStyles) {
       const button = document.createElement('button');
       button.className = `select-chip ${state.preDay.selectedStyleId === style.id ? 'active' : ''}`;
       button.disabled = isActive;
@@ -2586,7 +2640,7 @@ function renderPrepOptions() {
 
   const prepRow = document.getElementById('prep-chip-row');
   if (prepRow) {
-    for (const prep of getAvailablePrepOptions()) {
+    for (const prep of availablePreps) {
       const button = document.createElement('button');
       button.className = `select-chip ${state.preDay.selectedPrepId === prep.id ? 'active' : ''}`;
       button.disabled = isActive;
