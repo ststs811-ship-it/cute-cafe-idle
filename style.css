@@ -800,6 +800,11 @@ h3 {
   box-shadow: 0 14px 24px rgba(134, 95, 87, 0.1);
 }
 
+.tree-card.available {
+  border-color: #e8d4cc;
+  background: #fffaf8;
+}
+
 .tree-card.purchased {
   border-color: var(--success-line);
   background: #f4faf6;
@@ -835,6 +840,11 @@ h3 {
   border-color: #d8b5a7;
   background: #fff6f2;
   box-shadow: 0 14px 24px rgba(135, 96, 88, 0.1);
+}
+
+.research-card.available {
+  border-color: #e8d4cc;
+  background: #fffaf8;
 }
 
 .research-card.unlocked {

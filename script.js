@@ -1292,9 +1292,9 @@ function renderTabs() {
 function renderResources() {
   elements.moneyValue.textContent = formatNumber(state.money);
   elements.lifetimeMoney.textContent = formatNumber(state.lifetimeMoney);
-  elements.reputationValue.textContent = formatNumber(state.reputation);
-  elements.unlockPointsValue.textContent = formatNumber(state.unlockPoints);
-  elements.insightValue.textContent = formatNumber(state.insight);
+  elements.reputationValue.textContent = formatWholeNumber(state.reputation);
+  elements.unlockPointsValue.textContent = formatWholeNumber(state.unlockPoints);
+  elements.insightValue.textContent = formatWholeNumber(state.insight);
   elements.dayCountValue.textContent = `${state.daysCompleted}日`;
   elements.streakLabel.textContent = `連続目標達成 ${state.stats.currentTargetStreak}日`;
   elements.achievementProgress.textContent = `実績 ${getAchievementCount()} / ${ACHIEVEMENTS.length}`;
@@ -1419,16 +1419,16 @@ function updateBoostDisplays(now = Date.now()) {
 
     const statusLabel = card.querySelector('.boost-line span');
     if (statusLabel) {
-      statusLabel.textContent =
-        activeLeft > 0
-          ? `効果中 ${formatSeconds(activeLeft)}`
-          : cooldownLeft > 0
-            ? `再使用まで ${formatSeconds(cooldownLeft)}`
-            : '準備完了';
+      statusLabel.textContent = getBoostStatusLabel({
+        activeLeft,
+        cooldownLeft,
+        canUseManually,
+        runActive: state.dayRun.active,
+      });
     }
 
     button.disabled = !ready;
-    button.textContent = canUseManually ? '使う' : '自動発動';
+    button.textContent = canUseManually ? '??' : '????';
 
     if (boost?.description) {
       const meta = card.querySelector('.boost-meta');
@@ -1590,25 +1590,34 @@ function renderPrepOptions() {
 }
 
 function renderResearch() {
-  elements.researchSummary.textContent = `ひらめき ${formatNumber(state.insight)}`;
+  elements.researchSummary.textContent = `???? ${formatWholeNumber(state.insight)}`;
   elements.researchGrid.innerHTML = '';
   for (const research of RESEARCH_NODES) {
     const unlocked = hasResearch(research.id);
     const ready = research.requires.every((required) => hasResearch(required));
     const canBuy = ready && !unlocked && state.insight >= research.cost;
     const card = document.createElement('article');
-    card.className = `research-card ${unlocked ? 'unlocked' : canBuy ? 'ready' : 'locked'}`;
+    card.className = `research-card ${
+      unlocked ? 'unlocked' : canBuy ? 'ready' : ready ? 'available' : 'locked'
+    }`;
     const prereqText =
-      research.requires.length === 0 ? 'なし' : research.requires.map(getResearchName).join(' / ');
+      research.requires.length === 0 ? '??' : research.requires.map(getResearchName).join(' / ');
+    const researchStatus = unlocked
+      ? '????'
+      : canBuy
+        ? '????'
+        : ready
+          ? `?????? (${formatWholeNumber(state.insight)} / ${research.cost})`
+          : `??: ${prereqText}`;
     card.innerHTML = `
       <h3>${research.name}</h3>
       <p>${research.description}</p>
       <small>${research.effectText}</small>
       <div class="research-meta">
-        <span>コスト ${research.cost}</span>
-        <span>${unlocked ? '研究済み' : ready ? '研究可能' : `前提: ${prereqText}`}</span>
+        <span>??? ${research.cost}</span>
+        <span>${researchStatus}</span>
       </div>
-      <button class="tree-button" ${canBuy ? '' : 'disabled'}>${unlocked ? '研究済み' : '研究する'}</button>
+      <button class="tree-button" ${canBuy ? '' : 'disabled'}>${unlocked ? '????' : '????'}</button>
     `;
     card
       .querySelector('.tree-button')
@@ -1656,19 +1665,26 @@ function renderTree() {
     const ready = node.requires.every((required) => state.unlockedNodes.includes(required));
     const canBuy = ready && !purchased && state.unlockPoints >= node.cost;
     const card = document.createElement('article');
-    card.className = `tree-card ${purchased ? 'purchased' : canBuy ? 'ready' : 'locked'}`;
+    card.className = `tree-card ${purchased ? 'purchased' : canBuy ? 'ready' : ready ? 'available' : 'locked'}`;
     const prereqText =
-      node.requires.length === 0 ? 'なし' : node.requires.map(getNodeName).join(' / ');
+      node.requires.length === 0 ? '??' : node.requires.map(getNodeName).join(' / ');
+    const treeStatus = purchased
+      ? '????'
+      : canBuy
+        ? '????'
+        : ready
+          ? `?????? (${formatWholeNumber(state.unlockPoints)} / ${node.cost})`
+          : `??: ${prereqText}`;
     card.innerHTML = `
       <div class="mini-label">${node.branch}</div>
       <h3>${node.name}</h3>
       <p>${node.description}</p>
       <div class="tree-meta">
-        <span>コスト ${node.cost}</span>
-        <span>${purchased ? '開放済み' : ready ? '購入可能' : `前提: ${prereqText}`}</span>
+        <span>??? ${node.cost}</span>
+        <span>${treeStatus}</span>
       </div>
       <p>${node.effectText}</p>
-      <button class="tree-button" ${canBuy ? '' : 'disabled'}>${purchased ? '開放済み' : '開放する'}</button>
+      <button class="tree-button" ${canBuy ? '' : 'disabled'}>${purchased ? '????' : '????'}</button>
     `;
     card.querySelector('.tree-button').addEventListener('click', () => purchaseNode(node.id));
     elements.treeGrid.appendChild(card);
@@ -1870,6 +1886,23 @@ function formatNumber(value, digits = 1) {
     maximumFractionDigits: digits,
     minimumFractionDigits: value >= 100 ? 0 : Math.min(digits, 1),
   });
+}
+
+function formatWholeNumber(value) {
+  return Math.round(Number(value)).toLocaleString('ja-JP');
+}
+
+function getBoostStatusLabel({ activeLeft, cooldownLeft, canUseManually, runActive }) {
+  if (activeLeft > 0) {
+    return `??? ${formatSeconds(activeLeft)}`;
+  }
+  if (cooldownLeft > 0) {
+    return `????? ${formatSeconds(cooldownLeft)}`;
+  }
+  if (!runActive) {
+    return canUseManually ? '????????' : '????????';
+  }
+  return canUseManually ? '????' : '??????';
 }
 
 function roundValue(value) {
