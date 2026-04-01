@@ -205,7 +205,7 @@ const TREE_NODES = [
   {
     id: 'festivalBoard',
     name: 'イベント黒板',
-    description: '日替わり修飾子の良い面をさらに活かします。',
+    description: '日替わりの街のようすの良い面をさらに活かします。',
     cost: 3,
     branch: '右ルート',
     requires: ['choicePlus'],
@@ -574,8 +574,8 @@ const RESEARCH_NODES = [
     id: 'modifierReroll',
     name: '天気メモの見直し',
     cost: 3,
-    description: '日替わり修飾子を営業前に1回だけ引き直せます。',
-    effectText: '修飾子の事前確認と引き直しを解放',
+    description: '日替わりの街のようすを営業前に1回だけ引き直せます。',
+    effectText: '街のようすの事前確認と引き直しを解放',
     requires: [],
     apply(state) {
       state.systems.modifierRerollUnlocked = true;
@@ -1391,7 +1391,7 @@ function renderPrepOptions() {
     const modifier = getModifierById(state.preDay.forecastModifierId);
     cards.push(`
       <article class="prep-option">
-        <h3>日替わり修飾子</h3>
+        <h3>今日の街のようす</h3>
         <p>${modifier.name}</p>
         <small>${modifier.description}</small>
         <button class="inline-button" id="reroll-modifier-button" ${isActive || state.preDay.modifierRerollUsed ? 'disabled' : ''}>
