@@ -2336,6 +2336,101 @@ function renderCodex() {
   }).join('');
 }
 
+function evaluateAchievements() {
+  const newlyUnlocked = [];
+  const previousCount = getAchievementCount();
+  for (const achievement of getAchievementCatalog()) {
+    if (state.achievementsUnlocked.includes(achievement.id)) {
+      continue;
+    }
+    if (achievement.condition(state)) {
+      state.achievementsUnlocked.push(achievement.id);
+      state.unlockPoints += 1;
+      state.insight += 1;
+      newlyUnlocked.push(achievement);
+      showToast(
+        `実績達成: ${achievement.name}`,
+        `${achievement.description} / 解放ポイント +1 / ひらめき +1`,
+        'achievement',
+      );
+    }
+  }
+  applyAchievementSystemUnlocks(true, previousCount);
+  return newlyUnlocked;
+}
+
+function renderResources() {
+  elements.moneyValue.textContent = formatNumber(state.money);
+  elements.lifetimeMoney.textContent = formatNumber(state.lifetimeMoney);
+  elements.reputationValue.textContent = formatWholeNumber(state.reputation);
+  elements.unlockPointsValue.textContent = formatWholeNumber(state.unlockPoints);
+  elements.insightValue.textContent = formatWholeNumber(state.insight);
+  elements.dayCountValue.textContent = `${state.daysCompleted}日`;
+  elements.streakLabel.textContent = `連続目標達成 ${state.stats.currentTargetStreak}日`;
+  elements.achievementProgress.textContent = `実績 ${getAchievementCount()} / ${getAchievementCatalog().length}`;
+  elements.cafeGrade.textContent = getCafeGradeLabel();
+  maybePulseMainSales();
+}
+
+function renderCodex() {
+  if (!elements.codexGrid || !elements.codexSummary) {
+    return;
+  }
+  elements.codexSummary.textContent = `${state.discoveredCombos.length} / ${COMBO_DEFS.length} 発見`;
+  elements.codexGrid.innerHTML = COMBO_DEFS.map((combo) => {
+    const discovered = state.discoveredCombos.includes(combo.id);
+    const unlocked = isComboUnlocked(combo);
+    const cardClass = discovered ? 'discovered' : unlocked ? 'available' : 'locked';
+    const title = discovered ? combo.name : unlocked ? '未発見コンボ' : '？？？';
+    const body = discovered
+      ? combo.description
+      : unlocked
+        ? combo.hint || '組み合わせを試して見つけてみましょう。'
+        : state.systems.codexHintUnlocked
+          ? combo.hint || '実績を増やすと手がかりが増えます。'
+          : 'まだ見ぬごほうびの組み合わせです。';
+    const status = discovered ? '発見済み' : unlocked ? '未発見' : '条件未達';
+    return `
+      <article class="codex-card ${cardClass}">
+        <h3>${title}</h3>
+        <p>${body}</p>
+        <div class="reward">${status}</div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderAchievements() {
+  const achievementCatalog = getAchievementCatalog();
+  const count = getAchievementCount();
+  elements.achievementSummary.textContent = `${count} / ${achievementCatalog.length}達成`;
+  elements.achievementUnlocks.innerHTML = getAchievementUnlockCatalog()
+    .map((unlock) => {
+      const active = count >= unlock.threshold;
+      return `
+      <article class="unlock-chip ${active ? 'active' : 'locked'}">
+        <strong>${unlock.label}</strong>
+        <div>${unlock.description}</div>
+        <small>${active ? '解放済み' : `実績 ${unlock.threshold} 個で解放`}</small>
+      </article>
+    `;
+    })
+    .join('');
+  elements.achievementGrid.innerHTML = achievementCatalog
+    .map((achievement) => {
+      const unlocked = state.achievementsUnlocked.includes(achievement.id);
+      return `
+      <article class="achievement-card ${unlocked ? 'unlocked' : 'locked secret'}">
+        <h3>${unlocked ? achievement.name : '？？？'}</h3>
+        <p>${unlocked ? achievement.description : 'まだ見つかっていないごほうびです。'}</p>
+        <small>${unlocked ? '達成済み' : '未達成'}</small>
+        <div class="reward">${unlocked ? achievement.reward : 'ひみつのごほうび'}</div>
+      </article>
+    `;
+    })
+    .join('');
+}
+
 function renderBoosts() {
   const now = Date.now();
   const boosts = [...getAvailableBoosts()];
@@ -4081,6 +4176,101 @@ function showToast(title, body, tone = 'default') {
   );
 }
 
+function evaluateAchievements() {
+  const newlyUnlocked = [];
+  const previousCount = getAchievementCount();
+  for (const achievement of getAchievementCatalog()) {
+    if (state.achievementsUnlocked.includes(achievement.id)) {
+      continue;
+    }
+    if (achievement.condition(state)) {
+      state.achievementsUnlocked.push(achievement.id);
+      state.unlockPoints += 1;
+      state.insight += 1;
+      newlyUnlocked.push(achievement);
+      showToast(
+        `実績達成: ${achievement.name}`,
+        `${achievement.description} / 解放ポイント +1 / ひらめき +1`,
+        'achievement',
+      );
+    }
+  }
+  applyAchievementSystemUnlocks(true, previousCount);
+  return newlyUnlocked;
+}
+
+function renderResources() {
+  elements.moneyValue.textContent = formatNumber(state.money);
+  elements.lifetimeMoney.textContent = formatNumber(state.lifetimeMoney);
+  elements.reputationValue.textContent = formatWholeNumber(state.reputation);
+  elements.unlockPointsValue.textContent = formatWholeNumber(state.unlockPoints);
+  elements.insightValue.textContent = formatWholeNumber(state.insight);
+  elements.dayCountValue.textContent = `${state.daysCompleted}日`;
+  elements.streakLabel.textContent = `連続目標達成 ${state.stats.currentTargetStreak}日`;
+  elements.achievementProgress.textContent = `実績 ${getAchievementCount()} / ${getAchievementCatalog().length}`;
+  elements.cafeGrade.textContent = getCafeGradeLabel();
+  maybePulseMainSales();
+}
+
+function renderCodex() {
+  if (!elements.codexGrid || !elements.codexSummary) {
+    return;
+  }
+  elements.codexSummary.textContent = `${state.discoveredCombos.length} / ${COMBO_DEFS.length} 発見`;
+  elements.codexGrid.innerHTML = COMBO_DEFS.map((combo) => {
+    const discovered = state.discoveredCombos.includes(combo.id);
+    const unlocked = isComboUnlocked(combo);
+    const cardClass = discovered ? 'discovered' : unlocked ? 'available' : 'locked';
+    const title = discovered ? combo.name : unlocked ? '未発見コンボ' : '？？？';
+    const body = discovered
+      ? combo.description
+      : unlocked
+        ? combo.hint || '組み合わせを試して見つけてみましょう。'
+        : state.systems.codexHintUnlocked
+          ? combo.hint || '実績を増やすと手がかりが増えます。'
+          : 'まだ見ぬごほうびの組み合わせです。';
+    const status = discovered ? '発見済み' : unlocked ? '未発見' : '条件未達';
+    return `
+      <article class="codex-card ${cardClass}">
+        <h3>${title}</h3>
+        <p>${body}</p>
+        <div class="reward">${status}</div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderAchievements() {
+  const achievementCatalog = getAchievementCatalog();
+  const count = getAchievementCount();
+  elements.achievementSummary.textContent = `${count} / ${achievementCatalog.length}達成`;
+  elements.achievementUnlocks.innerHTML = getAchievementUnlockCatalog()
+    .map((unlock) => {
+      const active = count >= unlock.threshold;
+      return `
+      <article class="unlock-chip ${active ? 'active' : 'locked'}">
+        <strong>${unlock.label}</strong>
+        <div>${unlock.description}</div>
+        <small>${active ? '解放済み' : `実績 ${unlock.threshold} 個で解放`}</small>
+      </article>
+    `;
+    })
+    .join('');
+  elements.achievementGrid.innerHTML = achievementCatalog
+    .map((achievement) => {
+      const unlocked = state.achievementsUnlocked.includes(achievement.id);
+      return `
+      <article class="achievement-card ${unlocked ? 'unlocked' : 'locked secret'}">
+        <h3>${unlocked ? achievement.name : '？？？'}</h3>
+        <p>${unlocked ? achievement.description : 'まだ見つかっていないごほうびです。'}</p>
+        <small>${unlocked ? '達成済み' : '未達成'}</small>
+        <div class="reward">${unlocked ? achievement.reward : 'ひみつのごほうび'}</div>
+      </article>
+    `;
+    })
+    .join('');
+}
+
 function applyAchievementSystemUnlocks(showToasts = false, previousCount = 0) {
   const count = getAchievementCount();
   const unlockDefs = [
@@ -4213,4 +4403,99 @@ function renderAchievements() {
       </article>
     `;
   }).join('');
+}
+
+function evaluateAchievements() {
+  const newlyUnlocked = [];
+  const previousCount = getAchievementCount();
+  for (const achievement of getAchievementCatalog()) {
+    if (state.achievementsUnlocked.includes(achievement.id)) {
+      continue;
+    }
+    if (achievement.condition(state)) {
+      state.achievementsUnlocked.push(achievement.id);
+      state.unlockPoints += 1;
+      state.insight += 1;
+      newlyUnlocked.push(achievement);
+      showToast(
+        `���ђB��: ${achievement.name}`,
+        `${achievement.description} / ����|�C���g +1 / �Ђ�߂� +1`,
+        'achievement',
+      );
+    }
+  }
+  applyAchievementSystemUnlocks(true, previousCount);
+  return newlyUnlocked;
+}
+
+function renderResources() {
+  elements.moneyValue.textContent = formatNumber(state.money);
+  elements.lifetimeMoney.textContent = formatNumber(state.lifetimeMoney);
+  elements.reputationValue.textContent = formatWholeNumber(state.reputation);
+  elements.unlockPointsValue.textContent = formatWholeNumber(state.unlockPoints);
+  elements.insightValue.textContent = formatWholeNumber(state.insight);
+  elements.dayCountValue.textContent = `${state.daysCompleted}��`;
+  elements.streakLabel.textContent = `�A���ڕW�B�� ${state.stats.currentTargetStreak}��`;
+  elements.achievementProgress.textContent = `���� ${getAchievementCount()} / ${getAchievementCatalog().length}`;
+  elements.cafeGrade.textContent = getCafeGradeLabel();
+  maybePulseMainSales();
+}
+
+function renderCodex() {
+  if (!elements.codexGrid || !elements.codexSummary) {
+    return;
+  }
+  elements.codexSummary.textContent = `${state.discoveredCombos.length} / ${COMBO_DEFS.length} ����`;
+  elements.codexGrid.innerHTML = COMBO_DEFS.map((combo) => {
+    const discovered = state.discoveredCombos.includes(combo.id);
+    const unlocked = isComboUnlocked(combo);
+    const cardClass = discovered ? 'discovered' : unlocked ? 'available' : 'locked';
+    const title = discovered ? combo.name : unlocked ? '�������R���{' : '�H�H�H';
+    const body = discovered
+      ? combo.description
+      : unlocked
+        ? combo.hint || '�g�ݍ��킹�������Č����Ă݂܂��傤�B'
+        : state.systems.codexHintUnlocked
+          ? combo.hint || '���т𑝂₷�Ǝ肪���肪�����܂��B'
+          : '�܂����ʂ��ق��т̑g�ݍ��킹�ł��B';
+    const status = discovered ? '�����ς�' : unlocked ? '������' : '�������B';
+    return `
+      <article class="codex-card ${cardClass}">
+        <h3>${title}</h3>
+        <p>${body}</p>
+        <div class="reward">${status}</div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderAchievements() {
+  const achievementCatalog = getAchievementCatalog();
+  const count = getAchievementCount();
+  elements.achievementSummary.textContent = `${count} / ${achievementCatalog.length}�B��`;
+  elements.achievementUnlocks.innerHTML = getAchievementUnlockCatalog()
+    .map((unlock) => {
+      const active = count >= unlock.threshold;
+      return `
+      <article class="unlock-chip ${active ? 'active' : 'locked'}">
+        <strong>${unlock.label}</strong>
+        <div>${unlock.description}</div>
+        <small>${active ? '����ς�' : `���� ${unlock.threshold} �ŉ��`}</small>
+      </article>
+    `;
+    })
+    .join('');
+  elements.achievementGrid.innerHTML = achievementCatalog
+    .map((achievement) => {
+      const unlocked = state.achievementsUnlocked.includes(achievement.id);
+      return `
+      <article class="achievement-card ${unlocked ? 'unlocked' : 'locked secret'}">
+        <h3>${unlocked ? achievement.name : '�H�H�H'}</h3>
+        <p>${unlocked ? achievement.description : '�܂��������Ă��Ȃ����ق��тł��B'}</p>
+        <small>${unlocked ? '�B���ς�' : '���B��'}</small>
+        <div class="reward">${unlocked ? achievement.reward : '�Ђ݂̂��ق���'}</div>
+      </article>
+    `;
+    })
+    .join('');
 }
