@@ -1174,6 +1174,8 @@ const uiFeedback = {
   lastCelebratedSales: 0,
   targetReachedInRun: false,
 };
+const SAVE_EXPORT_PREFIX = 'CCI1:';
+const SAVE_EXPORT_SALT = 'strawberry-milk';
 
 init();
 
@@ -2847,8 +2849,32 @@ function saveState(nextState) {
   }
 }
 
+function encodeSaveData(value) {
+  const json = JSON.stringify(value);
+  const shifted = Array.from(json, (char, index) =>
+    String.fromCharCode(
+      char.charCodeAt(0) ^ SAVE_EXPORT_SALT.charCodeAt(index % SAVE_EXPORT_SALT.length),
+    ),
+  ).join('');
+  return SAVE_EXPORT_PREFIX + btoa(unescape(encodeURIComponent(shifted)));
+}
+
+function decodeSaveData(raw) {
+  if (!raw.startsWith(SAVE_EXPORT_PREFIX)) {
+    return JSON.parse(raw);
+  }
+  const payload = raw.slice(SAVE_EXPORT_PREFIX.length);
+  const shifted = decodeURIComponent(escape(atob(payload)));
+  const json = Array.from(shifted, (char, index) =>
+    String.fromCharCode(
+      char.charCodeAt(0) ^ SAVE_EXPORT_SALT.charCodeAt(index % SAVE_EXPORT_SALT.length),
+    ),
+  ).join('');
+  return JSON.parse(json);
+}
+
 function serializeSaveData() {
-  return JSON.stringify(state, null, 2);
+  return encodeSaveData(state);
 }
 
 function exportSaveData() {
@@ -2884,7 +2910,7 @@ function importSaveData() {
     return;
   }
   try {
-    const parsed = JSON.parse(raw);
+    const parsed = decodeSaveData(raw);
     applyLoadedState(parsed);
     saveState(state);
     elements.saveDataTextarea.dataset.autofill = 'auto';
