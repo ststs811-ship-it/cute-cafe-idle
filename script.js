@@ -593,6 +593,7 @@ const elements = {
   dailyModifierDesc: document.getElementById('daily-modifier-desc'),
   timeLeftLabel: document.getElementById('time-left-label'),
   dailyTargetLabel: document.getElementById('daily-target-label'),
+  dailyTargetHint: document.getElementById('daily-target-hint'),
   dayProgressFill: document.getElementById('day-progress-fill'),
   dayMoneyValue: document.getElementById('day-money-value'),
   dayCustomersValue: document.getElementById('day-customers-value'),
@@ -708,6 +709,10 @@ function createIdleRunState() {
     basePrice: 8,
     visitorRate: 0.75,
     dayTarget: 30,
+    targetBaseValue: 0,
+    targetGrowthValue: 0,
+    targetDemandValue: 0,
+    targetStretchMultiplier: 1,
     targetMultiplier: 1,
     priceMultiplier: 1,
     visitorMultiplier: 1,
@@ -874,7 +879,6 @@ function startDay() {
   }
   ensurePreDaySelections();
   const modifier = getModifierById(state.preDay.forecastModifierId);
-  const targetBase = 30 + state.daysCompleted * 8;
   state.dayRun = createIdleRunState();
   state.dayRun.active = true;
   state.dayRun.modifierId = modifier.id;
@@ -884,7 +888,6 @@ function startDay() {
   state.dayRun.durationMs = 45000 + Math.min(state.daysCompleted, 6) * 1500;
   state.dayRun.basePrice = 8 + Math.floor(state.daysCompleted / 2);
   state.dayRun.visitorRate = 0.75 + state.reputation * 0.035 + state.daysCompleted * 0.015;
-  state.dayRun.dayTarget = Math.round(targetBase);
   state.dayRun.priceMultiplier = modifier.priceMultiplier;
   state.dayRun.visitorMultiplier = modifier.visitorMultiplier;
   state.dayRun.salesMultiplier = modifier.effectMultiplier;
@@ -892,10 +895,38 @@ function startDay() {
   state.dayRun.effectMultiplier = modifier.effectMultiplier;
   state.dayRun.notes = [modifier.name + ': ' + modifier.description];
   applyPreDaySelections(state.dayRun);
+  initializeDayTarget(state.dayRun);
   initializeBoostStates(state.dayRun);
   applyStartingBoosts(state.dayRun);
   renderAll();
   saveState(state);
+}
+
+function initializeDayTarget(run) {
+  const projectedBaseSales =
+    run.basePrice *
+    state.permanent.priceMultiplier *
+    run.priceMultiplier *
+    run.visitorRate *
+    state.permanent.visitorMultiplier *
+    run.visitorMultiplier *
+    (1 +
+      state.reputation *
+        0.04 *
+        run.reputationMultiplier *
+        state.permanent.reputationEffectMultiplier) *
+    state.permanent.salesMultiplier *
+    run.salesMultiplier *
+    state.permanent.dailyModifierStrength *
+    (run.durationMs / 1000);
+  run.targetBaseValue = 18 + state.daysCompleted * 2.5;
+  run.targetGrowthValue = projectedBaseSales * 0.58;
+  run.targetDemandValue = state.reputation * 1.8;
+  run.targetStretchMultiplier = 1.04 + Math.min(state.daysCompleted, 20) * 0.012;
+  run.dayTarget = Math.round(
+    (run.targetBaseValue + run.targetGrowthValue + run.targetDemandValue) *
+      run.targetStretchMultiplier,
+  );
 }
 
 function applyPreDaySelections(run) {
@@ -1007,13 +1038,14 @@ function finishDay() {
       state.stats.bestTargetStreak,
       state.stats.currentTargetStreak,
     );
-    unlockGain += 1;
-    insightGain += 1 + run.insightOnTargetBonus;
+    unlockGain += 2;
+    insightGain += 2 + run.insightOnTargetBonus;
     if (getAchievementCount() >= 10) {
       unlockGain += 1;
     }
   } else {
     state.stats.currentTargetStreak = 0;
+    insightGain += 0;
   }
 
   const reputationGain = Math.max(
@@ -1041,6 +1073,7 @@ function finishDay() {
     insightGain,
     achievedTarget,
     modifierName: run.modifierName,
+    targetValue,
     achievements: newAchievements.map((entry) => entry.name),
   };
 
@@ -1228,9 +1261,7 @@ function renderResources() {
 
 function renderOperations() {
   const run = state.dayRun;
-  const targetValue = run.active
-    ? getCurrentTargetValue()
-    : Math.round((30 + state.daysCompleted * 8) * run.targetMultiplier);
+  const targetValue = run.active ? getCurrentTargetValue() : getPreviewTargetValue();
   elements.dayStatus.textContent = run.active
     ? run.selectionPaused
       ? '強化選択中'
@@ -1241,7 +1272,8 @@ function renderOperations() {
   elements.timeLeftLabel.textContent = run.active
     ? `残り ${formatSeconds(Math.max(0, run.durationMs - run.elapsedMs))}`
     : `営業時間 ${formatSeconds(run.durationMs)}`;
-  elements.dailyTargetLabel.textContent = `本日の目標 ${formatNumber(targetValue)}`;
+  elements.dailyTargetLabel.textContent = `本日の売上目標 ${formatNumber(targetValue)}`;
+  elements.dailyTargetHint.textContent = getTargetHintText(run, targetValue);
   elements.dayProgressFill.style.width = `${Math.min(100, (run.elapsedMs / run.durationMs) * 100)}%`;
   elements.dayMoneyValue.textContent = formatNumber(run.dayMoney);
   elements.dayCustomersValue.textContent = `${Math.floor(run.dayCustomers)}人`;
@@ -1278,8 +1310,8 @@ function renderLastResult() {
   const achievementText =
     result.achievements.length > 0 ? ` / 新実績: ${result.achievements.join('、')}` : '';
   elements.lastResultBox.textContent =
-    `${result.dayNumber}日目: 売上 ${formatNumber(result.sales)}、来客 ${result.customers}人、評判 +${result.reputationGain}、解放ポイント +${result.unlockGain}、ひらめき +${result.insightGain}` +
-    ` / ${result.modifierName}${result.achievedTarget ? ' / 目標達成' : ''}${achievementText}`;
+    `${result.dayNumber}日目: 売上 ${formatNumber(result.sales)} / 目標 ${formatNumber(result.targetValue)}、来客 ${result.customers}人、評判 +${result.reputationGain}、解放ポイント +${result.unlockGain}、ひらめき +${result.insightGain}` +
+    ` / ${result.modifierName}${result.achievedTarget ? ' / 売上目標達成' : ' / 売上目標は未達'}${achievementText}`;
 }
 
 function renderBoosts() {
@@ -1596,6 +1628,47 @@ function getTodayMultiplier() {
 
 function getCurrentTargetValue() {
   return Math.round(state.dayRun.dayTarget * state.dayRun.targetMultiplier);
+}
+
+function getPreviewTargetValue() {
+  const previewRun = createIdleRunState();
+  const modifier = getModifierById(state.preDay.forecastModifierId);
+  previewRun.durationMs = 45000 + Math.min(state.daysCompleted, 6) * 1500;
+  previewRun.basePrice = 8 + Math.floor(state.daysCompleted / 2);
+  previewRun.visitorRate = 0.75 + state.reputation * 0.035 + state.daysCompleted * 0.015;
+  previewRun.priceMultiplier = modifier.priceMultiplier;
+  previewRun.visitorMultiplier = modifier.visitorMultiplier;
+  previewRun.salesMultiplier = modifier.effectMultiplier;
+  previewRun.reputationMultiplier = modifier.reputationMultiplier;
+  previewRun.effectMultiplier = modifier.effectMultiplier;
+  applyPreDaySelections(previewRun);
+  initializeDayTarget(previewRun);
+  return Math.round(previewRun.dayTarget * previewRun.targetMultiplier);
+}
+
+function getTargetHintText(run, targetValue) {
+  const sourceRun = run.active && run.dayTarget > 0 ? run : getPreviewRunForHint();
+  const base = Math.round(sourceRun.targetBaseValue);
+  const growth = Math.round(sourceRun.targetGrowthValue);
+  const demand = Math.round(sourceRun.targetDemandValue);
+  const stretchPercent = Math.round((sourceRun.targetStretchMultiplier - 1) * 100);
+  return `基礎売上 ${base}、成長見込み ${growth}、評判需要 ${demand} をもとに、少し背伸びした ${formatNumber(targetValue)} に設定されています。営業日数に応じた上乗せは約 ${stretchPercent}% です。`;
+}
+
+function getPreviewRunForHint() {
+  const previewRun = createIdleRunState();
+  const modifier = getModifierById(state.preDay.forecastModifierId);
+  previewRun.durationMs = 45000 + Math.min(state.daysCompleted, 6) * 1500;
+  previewRun.basePrice = 8 + Math.floor(state.daysCompleted / 2);
+  previewRun.visitorRate = 0.75 + state.reputation * 0.035 + state.daysCompleted * 0.015;
+  previewRun.priceMultiplier = modifier.priceMultiplier;
+  previewRun.visitorMultiplier = modifier.visitorMultiplier;
+  previewRun.salesMultiplier = modifier.effectMultiplier;
+  previewRun.reputationMultiplier = modifier.reputationMultiplier;
+  previewRun.effectMultiplier = modifier.effectMultiplier;
+  applyPreDaySelections(previewRun);
+  initializeDayTarget(previewRun);
+  return previewRun;
 }
 
 function getCafeGradeLabel() {
