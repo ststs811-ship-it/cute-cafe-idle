@@ -884,6 +884,16 @@ h3 {
   background: #fff9f8;
 }
 
+.achievement-card.secret {
+  border-style: dashed;
+  border-color: #ead8d3;
+  background: #fffdfb;
+}
+
+.achievement-card.secret h3 {
+  letter-spacing: 0.16em;
+}
+
 .achievement-card.unlocked {
   border-color: #d9b2a7;
   background: #fff3f5;

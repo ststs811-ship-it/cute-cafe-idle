@@ -420,6 +420,234 @@ const AUTO_UNLOCKS = [
   },
 ];
 
+const ACHIEVEMENT_DEFS = [
+  {
+    id: 'firstOpen',
+    name: 'ちいさな一歩',
+    description: '1日営業を1回終える',
+    reward: '解放ポイント +1',
+    condition: (state) => state.daysCompleted >= 1,
+  },
+  {
+    id: 'sales100',
+    name: 'おやつ代できた',
+    description: '累計売上を100にする',
+    reward: '解放ポイント +1',
+    condition: (state) => state.lifetimeMoney >= 100,
+  },
+  {
+    id: 'sales400',
+    name: '棚に焼き菓子を',
+    description: '累計売上を400にする',
+    reward: '解放ポイント +1',
+    condition: (state) => state.lifetimeMoney >= 400,
+  },
+  {
+    id: 'sales1200',
+    name: 'ショーケースが輝く日',
+    description: '累計売上を1200にする',
+    reward: '解放ポイント +1',
+    condition: (state) => state.lifetimeMoney >= 1200,
+  },
+  {
+    id: 'day50',
+    name: '今日はいい感じ',
+    description: '1日で売上50を達成する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.bestDayMoney >= 50,
+  },
+  {
+    id: 'day90',
+    name: '甘い香りで大繁盛',
+    description: '1日で売上90を達成する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.bestDayMoney >= 90,
+  },
+  {
+    id: 'day150',
+    name: '席が足りないかも',
+    description: '1日で売上150を達成する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.bestDayMoney >= 150,
+  },
+  {
+    id: 'rep5',
+    name: '名前を覚えられた',
+    description: '評判5に到達する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.reputation >= 5,
+  },
+  {
+    id: 'rep10',
+    name: 'にこにこ人気店',
+    description: '評判10に到達する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.reputation >= 10,
+  },
+  {
+    id: 'rep18',
+    name: '遠くからでも寄りたい',
+    description: '評判18に到達する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.reputation >= 18,
+  },
+  {
+    id: 'boost5',
+    name: 'てきぱき店長',
+    description: 'ブーストを5回使う',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.boostUses >= 5,
+  },
+  {
+    id: 'boost12',
+    name: 'これしか勝たん',
+    description: 'ブーストを12回使う',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.boostUses >= 12,
+  },
+  {
+    id: 'customers40',
+    name: 'にぎやかになってきた',
+    description: '累計来客40人を達成する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.totalCustomers >= 40,
+  },
+  {
+    id: 'customers120',
+    name: 'いつもの顔ぶれ',
+    description: '累計来客120人を達成する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.totalCustomers >= 120,
+  },
+  {
+    id: 'target3',
+    name: 'こつこつ優等生',
+    description: '売上目標を3日連続で達成する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.bestTargetStreak >= 3,
+  },
+  {
+    id: 'target5',
+    name: '毎日えらい',
+    description: '売上目標を5日連続で達成する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.bestTargetStreak >= 5,
+  },
+  {
+    id: 'tree3',
+    name: 'お店づくりのはじまり',
+    description: '解放ツリーを3個開放する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.unlockedNodes.length >= 3,
+  },
+  {
+    id: 'tree6',
+    name: 'お気に入りの空間',
+    description: '解放ツリーを6個開放する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.unlockedNodes.length >= 6,
+  },
+  {
+    id: 'perk3',
+    name: '今日はこれでいこう',
+    description: '今日のひと工夫を3回選ぶ',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.perkSelections >= 3,
+  },
+  {
+    id: 'allBoosts',
+    name: '看板もメニューも主役',
+    description: '両方のブーストを同じ営業で使う',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.usedBothBoostsInRun,
+  },
+  {
+    id: 'styleFirst',
+    name: 'ムードづくり上手',
+    description: '営業スタイルを選んで1日営業する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.styleRuns >= 1,
+  },
+  {
+    id: 'serviceFirst',
+    name: '特別な一日',
+    description: '特別営業を選んで1日営業する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.serviceRuns >= 1,
+  },
+  {
+    id: 'event3',
+    name: 'おしゃべり上手',
+    description: '営業中のできごとに3回対応する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.eventChoices >= 3,
+  },
+  {
+    id: 'combo1',
+    name: 'ひみつのレシピ',
+    description: 'コンボを1つ発見する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.length >= 1,
+  },
+  {
+    id: 'combo3',
+    name: 'ごほうびコレクター',
+    description: 'コンボを3つ発見する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.length >= 3,
+  },
+  {
+    id: 'strawberryFair',
+    name: 'いちごフェア',
+    description: '「いちご映えセット」を発見する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.includes('strawberryShowcase'),
+  },
+  {
+    id: 'nightCafe',
+    name: '夜ふかしのごほうび',
+    description: '「夜ふかしラテ時間」を発見する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.includes('nightLatte'),
+  },
+  {
+    id: 'comboRun3',
+    name: '相性ぴったり',
+    description: 'コンボが発動した営業を3回行う',
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.comboRuns >= 3,
+  },
+];
+
+const ACHIEVEMENT_UNLOCKS = [
+  { threshold: 3, label: 'お店メモ拡張', description: '連続目標達成の表示が有効になります。' },
+  {
+    threshold: 6,
+    label: 'カフェランク補正',
+    description: '実績数に応じて売上に小さな補正が付きます。',
+  },
+  {
+    threshold: 8,
+    label: '特別営業',
+    description: '営業前に特別営業を選べるようになります。',
+  },
+  {
+    threshold: 10,
+    label: 'ごほうびポイント',
+    description: '売上目標達成時の解放ポイントがさらに +1 されます。',
+  },
+  {
+    threshold: 12,
+    label: '甘いヒントメモ',
+    description: '未発見コンボのヒントが少しだけ見やすくなります。',
+  },
+  {
+    threshold: 14,
+    label: '季節のフェア',
+    description: '特別営業に「季節のフェア」が追加されます。',
+  },
+];
+
 const TARGET_BALANCE = {
   baseValue: 24,
   dayGrowth: 3,
@@ -1085,6 +1313,7 @@ function createDefaultState() {
     systems: {
       achievementsTabUnlocked: false,
       codexUnlocked: false,
+      codexHintUnlocked: false,
       secondBoostUnlocked: false,
       extraPerkChoice: false,
       prepBoostUnlocked: false,
@@ -1121,6 +1350,10 @@ function createDefaultState() {
       totalCustomers: 0,
       boostUses: 0,
       perkSelections: 0,
+      styleRuns: 0,
+      serviceRuns: 0,
+      comboRuns: 0,
+      eventChoices: 0,
       currentTargetStreak: 0,
       bestTargetStreak: 0,
       usedBothBoostsInRun: false,
@@ -1306,6 +1539,12 @@ function applyAchievementSystemUnlocks(showToasts = false, previousCount = 0) {
       key: 'specialServiceUnlocked',
       title: '特別営業が増えました',
       body: '営業前の準備に特別営業が追加されました。',
+    },
+    {
+      threshold: 12,
+      key: 'codexHintUnlocked',
+      title: '甘いヒントメモが増えました',
+      body: '未発見コンボの手がかりが、図鑑で少しだけ見やすくなりました。',
     },
     {
       threshold: 14,
@@ -1659,6 +1898,15 @@ function finishDay() {
   state.reputation += reputationGain;
   state.unlockPoints += unlockGain;
   state.insight += insightGain;
+  if (run.styleId) {
+    state.stats.styleRuns += 1;
+  }
+  if (run.serviceId) {
+    state.stats.serviceRuns += 1;
+  }
+  if (run.comboId) {
+    state.stats.comboRuns += 1;
+  }
   state.stats.usedBothBoostsInRun =
     run.usedBoostIds.includes('hustle') && run.usedBoostIds.includes('menuPush');
 
@@ -1708,7 +1956,7 @@ function finishDay() {
 function evaluateAchievements() {
   const newlyUnlocked = [];
   const previousCount = getAchievementCount();
-  for (const achievement of ACHIEVEMENTS) {
+  for (const achievement of ACHIEVEMENT_DEFS) {
     if (state.achievementsUnlocked.includes(achievement.id)) {
       continue;
     }
@@ -1779,6 +2027,8 @@ function offerDayEvent() {
     button.addEventListener('click', () => {
       choice.apply(run);
       run.eventResolved = true;
+      state.stats.eventChoices += 1;
+      evaluateAchievements();
       renderDayEventStatus();
       closeEventOverlay();
       renderAll();
@@ -2742,6 +2992,140 @@ function getResearchName(researchId) {
   return research ? research.name : researchId;
 }
 
+function applyAchievementSystemUnlocks(showToasts = false, previousCount = 0) {
+  const count = getAchievementCount();
+  const unlockDefs = [
+    {
+      threshold: 8,
+      key: 'specialServiceUnlocked',
+      title: '特別営業が増えました',
+      body: '営業前の準備で、特別な一日を選べるようになりました。',
+    },
+    {
+      threshold: 12,
+      key: 'codexHintUnlocked',
+      title: '甘いヒントメモが増えました',
+      body: '未発見コンボの手がかりが、図鑑で少しだけ見やすくなりました。',
+    },
+    {
+      threshold: 14,
+      key: 'festivalServiceUnlocked',
+      title: '季節のフェアが増えました',
+      body: '特別営業に「季節のフェア」が加わりました。',
+    },
+  ];
+
+  for (const unlock of unlockDefs) {
+    const unlocked = count >= unlock.threshold;
+    state.systems[unlock.key] = unlocked;
+    if (showToasts && unlocked && previousCount < unlock.threshold) {
+      showToast(unlock.title, unlock.body, 'achievement');
+    }
+  }
+}
+
+function discoverCombo(comboId) {
+  if (state.discoveredCombos.includes(comboId)) {
+    return;
+  }
+  const combo = COMBO_DEFS.find((entry) => entry.id === comboId);
+  if (!combo) {
+    return;
+  }
+  state.discoveredCombos.push(comboId);
+  showToast('新しいコンボを発見', `${combo.name} が図鑑に加わりました。`, 'achievement');
+}
+
+function evaluateAchievements() {
+  const newlyUnlocked = [];
+  const previousCount = getAchievementCount();
+  for (const achievement of ACHIEVEMENT_DEFS) {
+    if (state.achievementsUnlocked.includes(achievement.id)) {
+      continue;
+    }
+    if (achievement.condition(state)) {
+      state.achievementsUnlocked.push(achievement.id);
+      state.unlockPoints += 1;
+      state.insight += 1;
+      newlyUnlocked.push(achievement);
+      showToast(
+        `実績達成: ${achievement.name}`,
+        `${achievement.description} / 解放ポイント +1 / ひらめき +1`,
+        'achievement',
+      );
+    }
+  }
+  applyAchievementSystemUnlocks(true, previousCount);
+  return newlyUnlocked;
+}
+
+function renderResources() {
+  elements.moneyValue.textContent = formatNumber(state.money);
+  elements.lifetimeMoney.textContent = formatNumber(state.lifetimeMoney);
+  elements.reputationValue.textContent = formatWholeNumber(state.reputation);
+  elements.unlockPointsValue.textContent = formatWholeNumber(state.unlockPoints);
+  elements.insightValue.textContent = formatWholeNumber(state.insight);
+  elements.dayCountValue.textContent = `${state.daysCompleted}日`;
+  elements.streakLabel.textContent = `連続目標達成 ${state.stats.currentTargetStreak}日`;
+  elements.achievementProgress.textContent = `実績 ${getAchievementCount()} / ${ACHIEVEMENT_DEFS.length}`;
+  elements.cafeGrade.textContent = getCafeGradeLabel();
+  maybePulseMainSales();
+}
+
+function renderCodex() {
+  if (!elements.codexGrid || !elements.codexSummary) {
+    return;
+  }
+  elements.codexSummary.textContent = `${state.discoveredCombos.length} / ${COMBO_DEFS.length} 発見`;
+  elements.codexGrid.innerHTML = COMBO_DEFS.map((combo) => {
+    const discovered = state.discoveredCombos.includes(combo.id);
+    const unlocked = isComboUnlocked(combo);
+    const cardClass = discovered ? 'discovered' : unlocked ? 'available' : 'locked';
+    const title = discovered ? combo.name : unlocked ? '未発見コンボ' : '？？？';
+    const body = discovered
+      ? combo.description
+      : unlocked
+        ? combo.hint || '組み合わせを試して見つけてみましょう。'
+        : state.systems.codexHintUnlocked
+          ? combo.hint || '実績を増やすと手がかりが増えます。'
+          : 'まだ見ぬごほうびの組み合わせです。';
+    const status = discovered ? '発見済み' : unlocked ? '未発見' : '条件未達';
+    return `
+      <article class="codex-card ${cardClass}">
+        <h3>${title}</h3>
+        <p>${body}</p>
+        <div class="reward">${status}</div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderAchievements() {
+  const count = getAchievementCount();
+  elements.achievementSummary.textContent = `${count} / ${ACHIEVEMENT_DEFS.length}達成`;
+  elements.achievementUnlocks.innerHTML = ACHIEVEMENT_UNLOCKS.map((unlock) => {
+    const active = count >= unlock.threshold;
+    return `
+      <article class="unlock-chip ${active ? 'active' : 'locked'}">
+        <strong>${unlock.label}</strong>
+        <div>${unlock.description}</div>
+        <small>${active ? '解放済み' : `実績 ${unlock.threshold} 個で解放`}</small>
+      </article>
+    `;
+  }).join('');
+  elements.achievementGrid.innerHTML = ACHIEVEMENT_DEFS.map((achievement) => {
+    const unlocked = state.achievementsUnlocked.includes(achievement.id);
+    return `
+      <article class="achievement-card ${unlocked ? 'unlocked' : 'locked secret'}">
+        <h3>${unlocked ? achievement.name : '？？？'}</h3>
+        <p>${unlocked ? achievement.description : 'まだ見つかっていないごほうびです。'}</p>
+        <small>${unlocked ? '達成済み' : '未達成'}</small>
+        <div class="reward">${unlocked ? achievement.reward : 'ひみつのごほうび'}</div>
+      </article>
+    `;
+  }).join('');
+}
+
 function triggerElementBurst(element, className = 'soft-pop') {
   if (!element) {
     return;
@@ -3154,4 +3538,138 @@ function showToast(title, body, tone = 'default') {
     },
     tone === 'achievement' ? 3600 : 3000,
   );
+}
+
+function applyAchievementSystemUnlocks(showToasts = false, previousCount = 0) {
+  const count = getAchievementCount();
+  const unlockDefs = [
+    {
+      threshold: 8,
+      key: 'specialServiceUnlocked',
+      title: '特別営業が増えました',
+      body: '営業前の準備で、特別な一日を選べるようになりました。',
+    },
+    {
+      threshold: 12,
+      key: 'codexHintUnlocked',
+      title: '甘いヒントメモが増えました',
+      body: '未発見コンボの手がかりが、図鑑で少しだけ見やすくなりました。',
+    },
+    {
+      threshold: 14,
+      key: 'festivalServiceUnlocked',
+      title: '季節のフェアが増えました',
+      body: '特別営業に「季節のフェア」が加わりました。',
+    },
+  ];
+
+  for (const unlock of unlockDefs) {
+    const unlocked = count >= unlock.threshold;
+    state.systems[unlock.key] = unlocked;
+    if (showToasts && unlocked && previousCount < unlock.threshold) {
+      showToast(unlock.title, unlock.body, 'achievement');
+    }
+  }
+}
+
+function discoverCombo(comboId) {
+  if (state.discoveredCombos.includes(comboId)) {
+    return;
+  }
+  const combo = COMBO_DEFS.find((entry) => entry.id === comboId);
+  if (!combo) {
+    return;
+  }
+  state.discoveredCombos.push(comboId);
+  showToast('新しいコンボを発見', `${combo.name} が図鑑に加わりました。`, 'achievement');
+}
+
+function evaluateAchievements() {
+  const newlyUnlocked = [];
+  const previousCount = getAchievementCount();
+  for (const achievement of ACHIEVEMENT_DEFS) {
+    if (state.achievementsUnlocked.includes(achievement.id)) {
+      continue;
+    }
+    if (achievement.condition(state)) {
+      state.achievementsUnlocked.push(achievement.id);
+      state.unlockPoints += 1;
+      state.insight += 1;
+      newlyUnlocked.push(achievement);
+      showToast(
+        `実績達成: ${achievement.name}`,
+        `${achievement.description} / 解放ポイント +1 / ひらめき +1`,
+        'achievement',
+      );
+    }
+  }
+  applyAchievementSystemUnlocks(true, previousCount);
+  return newlyUnlocked;
+}
+
+function renderResources() {
+  elements.moneyValue.textContent = formatNumber(state.money);
+  elements.lifetimeMoney.textContent = formatNumber(state.lifetimeMoney);
+  elements.reputationValue.textContent = formatWholeNumber(state.reputation);
+  elements.unlockPointsValue.textContent = formatWholeNumber(state.unlockPoints);
+  elements.insightValue.textContent = formatWholeNumber(state.insight);
+  elements.dayCountValue.textContent = `${state.daysCompleted}日`;
+  elements.streakLabel.textContent = `連続目標達成 ${state.stats.currentTargetStreak}日`;
+  elements.achievementProgress.textContent = `実績 ${getAchievementCount()} / ${ACHIEVEMENT_DEFS.length}`;
+  elements.cafeGrade.textContent = getCafeGradeLabel();
+  maybePulseMainSales();
+}
+
+function renderCodex() {
+  if (!elements.codexGrid || !elements.codexSummary) {
+    return;
+  }
+  elements.codexSummary.textContent = `${state.discoveredCombos.length} / ${COMBO_DEFS.length} 発見`;
+  elements.codexGrid.innerHTML = COMBO_DEFS.map((combo) => {
+    const discovered = state.discoveredCombos.includes(combo.id);
+    const unlocked = isComboUnlocked(combo);
+    const cardClass = discovered ? 'discovered' : unlocked ? 'available' : 'locked';
+    const title = discovered ? combo.name : unlocked ? '未発見コンボ' : '？？？';
+    const body = discovered
+      ? combo.description
+      : unlocked
+        ? combo.hint || '組み合わせを試して見つけてみましょう。'
+        : state.systems.codexHintUnlocked
+          ? combo.hint || '実績を増やすと手がかりが増えます。'
+          : 'まだ見ぬごほうびの組み合わせです。';
+    const status = discovered ? '発見済み' : unlocked ? '未発見' : '条件未達';
+    return `
+      <article class="codex-card ${cardClass}">
+        <h3>${title}</h3>
+        <p>${body}</p>
+        <div class="reward">${status}</div>
+      </article>
+    `;
+  }).join('');
+}
+
+function renderAchievements() {
+  const count = getAchievementCount();
+  elements.achievementSummary.textContent = `${count} / ${ACHIEVEMENT_DEFS.length}達成`;
+  elements.achievementUnlocks.innerHTML = ACHIEVEMENT_UNLOCKS.map((unlock) => {
+    const active = count >= unlock.threshold;
+    return `
+      <article class="unlock-chip ${active ? 'active' : 'locked'}">
+        <strong>${unlock.label}</strong>
+        <div>${unlock.description}</div>
+        <small>${active ? '解放済み' : `実績 ${unlock.threshold} 個で解放`}</small>
+      </article>
+    `;
+  }).join('');
+  elements.achievementGrid.innerHTML = ACHIEVEMENT_DEFS.map((achievement) => {
+    const unlocked = state.achievementsUnlocked.includes(achievement.id);
+    return `
+      <article class="achievement-card ${unlocked ? 'unlocked' : 'locked secret'}">
+        <h3>${unlocked ? achievement.name : '？？？'}</h3>
+        <p>${unlocked ? achievement.description : 'まだ見つかっていないごほうびです。'}</p>
+        <small>${unlocked ? '達成済み' : '未達成'}</small>
+        <div class="reward">${unlocked ? achievement.reward : 'ひみつのごほうび'}</div>
+      </article>
+    `;
+  }).join('');
 }
