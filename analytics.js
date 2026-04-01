@@ -1,5 +1,5 @@
 window.CAFE_ANALYTICS = window.CAFE_ANALYTICS || {
-  goatcounterUrl: '',
+  goatcounterUrl: 'https://ststs811.goatcounter.com/count',
 };
 
 (function initHiddenAnalytics() {
