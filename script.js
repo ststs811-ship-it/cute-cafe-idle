@@ -442,11 +442,45 @@ const BOOST_DEFS = {
   hustle: {
     id: 'hustle',
     name: '呼び込み',
-    description: '10秒間、来客速度が2倍',
-    baseDuration: 10,
+    description: 'その場でお客さんを呼び込んで、すぐに売上を伸ばします',
+    baseDuration: 0,
     baseCooldown: 30,
     multiplier() {
-      return { visitor: 2, price: 1 };
+      return { visitor: 1, price: 1 };
+    },
+    instant(run) {
+      const visitorBurst = Math.max(
+        3,
+        Math.round(
+          run.visitorRate *
+            state.permanent.visitorMultiplier *
+            run.visitorMultiplier *
+            (state.systems.secondBoostUnlocked ? 3.2 : 2.6),
+        ),
+      );
+      const reputationEffect =
+        1 +
+        state.reputation *
+          0.04 *
+          run.reputationMultiplier *
+          state.permanent.reputationEffectMultiplier;
+      const price = run.basePrice * state.permanent.priceMultiplier * run.priceMultiplier;
+      const salesMultiplier =
+        state.permanent.salesMultiplier *
+        run.salesMultiplier *
+        getAchievementBonusMultiplier() *
+        state.permanent.dailyModifierStrength;
+      const moneyGain = price * visitorBurst * reputationEffect * salesMultiplier;
+      run.dayCustomers += visitorBurst;
+      run.dayMoney += moneyGain;
+      state.money += moneyGain;
+      state.lifetimeMoney += moneyGain;
+      triggerElementBurst(elements.dayMoneyValue, 'number-pop');
+      showToast(
+        '呼び込み成功',
+        `${visitorBurst}人がふらっと立ち寄って、${formatNumber(moneyGain)} の売上になりました。`,
+        'perk',
+      );
     },
   },
   menuPush: {
@@ -1787,6 +1821,22 @@ function applyPreDaySelections(run, options = {}) {
 function applyStartingBoosts(run) {
   const now = Date.now();
   for (const startingBoost of run.startingBoosts) {
+    const boost = BOOST_DEFS[startingBoost.boostId];
+    if (!boost) {
+      continue;
+    }
+    if (typeof boost.instant === 'function') {
+      boost.instant(run);
+      const cooldown = Math.round(boost.baseCooldown * state.permanent.cooldownMultiplier);
+      if (!run.boostStates[startingBoost.boostId]) {
+        run.boostStates[startingBoost.boostId] = { activeUntil: 0, cooldownUntil: 0 };
+      }
+      run.boostStates[startingBoost.boostId].cooldownUntil = Math.max(
+        run.boostStates[startingBoost.boostId].cooldownUntil,
+        now + cooldown * 1000,
+      );
+      continue;
+    }
     if (!run.boostStates[startingBoost.boostId]) {
       run.boostStates[startingBoost.boostId] = { activeUntil: 0, cooldownUntil: 0 };
     }
@@ -2077,9 +2127,14 @@ function useBoost(boostId) {
     return;
   }
   const duration = boost.baseDuration + run.extraBoostDuration;
-  boostState.activeUntil = now + duration * 1000;
   const cooldownCut = !run.firstBoostDiscountUsed ? run.firstBoostCooldownCutMs : 0;
   boostState.cooldownUntil = now + Math.max(5000, cooldown * 1000 - cooldownCut);
+  if (typeof boost.instant === 'function') {
+    boostState.activeUntil = 0;
+    boost.instant(run);
+  } else {
+    boostState.activeUntil = now + duration * 1000;
+  }
   run.firstBoostDiscountUsed = true;
   state.stats.boostUses += 1;
   if (!run.usedBoostIds.includes(boostId)) {
@@ -3072,7 +3127,11 @@ function maybeCelebrateRunMoments(targetValue) {
     uiFeedback.targetReachedInRun = true;
     triggerElementBurst(elements.dailyTargetLabel, 'target-pop');
     triggerElementBurst(elements.dayProgressFill, 'target-fill-pop');
-    showToast('目標が見えてきました', '今日の売上目標に手が届きました。あと少しです。', 'target');
+    showToast(
+      '売上目標を達成しました',
+      '今日の売上目標をクリアしました。ごほうびは営業終了時に受け取れます。',
+      'target',
+    );
   }
 }
 
