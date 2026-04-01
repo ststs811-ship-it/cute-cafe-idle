@@ -515,6 +515,28 @@ const MENU_OPTIONS = [
       run.notes.push('おすすめメニュー: ごほうびプリン');
     },
   },
+  {
+    id: 'honeyToast',
+    name: 'はちみつトースト',
+    description: 'やさしい香りで客単価が伸び、目標も少しまとまりやすくなります。',
+    unlockKey: 'artisanMenuUnlocked',
+    apply(run) {
+      run.priceMultiplier *= 1.14;
+      run.targetMultiplier *= 0.96;
+      run.notes.push('おすすめメニュー: はちみつトースト');
+    },
+  },
+  {
+    id: 'mintJelly',
+    name: 'ミントゼリーフロート',
+    description: '爽やかさが広がり、来客と評判の伸びが少し上がります。',
+    unlockKey: 'artisanMenuUnlocked',
+    apply(run) {
+      run.visitorMultiplier *= 1.12;
+      run.reputationGainMultiplier *= 1.12;
+      run.notes.push('おすすめメニュー: ミントゼリーフロート');
+    },
+  },
 ];
 
 const PREP_OPTIONS = [
@@ -543,6 +565,26 @@ const PREP_OPTIONS = [
     apply(run) {
       run.firstBoostCooldownCutMs += 10000;
       run.notes.push('仕込み: 道具チェック');
+    },
+  },
+  {
+    id: 'flowerGreeting',
+    name: '花かごのごあいさつ',
+    description: 'やわらかな迎え方で、目標達成時の評判がさらに上がります。',
+    unlockKey: 'hospitalityPrepUnlocked',
+    apply(run) {
+      run.reputationOnTargetBonus += 2;
+      run.notes.push('仕込み: 花かごのごあいさつ');
+    },
+  },
+  {
+    id: 'letterReply',
+    name: 'おたより返し',
+    description: 'やり取りを整えて、目標達成時の解放ポイントを追加で1獲得します。',
+    unlockKey: 'hospitalityPrepUnlocked',
+    apply(run) {
+      run.unlockOnTargetBonus += 1;
+      run.notes.push('仕込み: おたより返し');
     },
   },
 ];
@@ -580,6 +622,31 @@ const STYLE_OPTIONS = [
       run.salesMultiplier *= 1.08;
       run.perkOfferTimeMultiplier *= 0.92;
       run.notes.push('営業スタイル: ショーケース推し');
+    },
+  },
+  {
+    id: 'storyShelf',
+    name: 'よみもの時間',
+    description: '落ち着いた空気でゆっくり過ごしてもらい、評判と売上をじんわり伸ばします。',
+    unlockKey: 'storybookStyleUnlocked',
+    apply(run) {
+      run.durationMs += 7000;
+      run.salesMultiplier *= 1.07;
+      run.reputationGainMultiplier *= 1.2;
+      run.targetMultiplier *= 1.04;
+      run.notes.push('営業スタイル: よみもの時間');
+    },
+  },
+  {
+    id: 'terraceBreeze',
+    name: 'テラスの風',
+    description: '外の空気を取り入れて、客足とイベントの流れを少し軽くします。',
+    unlockKey: 'terraceStyleUnlocked',
+    apply(run) {
+      run.visitorMultiplier *= 1.15;
+      run.perkOfferTimeMultiplier *= 0.9;
+      run.targetMultiplier *= 0.99;
+      run.notes.push('営業スタイル: テラスの風');
     },
   },
 ];
@@ -623,6 +690,30 @@ const SPECIAL_SERVICE_OPTIONS = [
       run.targetMultiplier *= 1.05;
       run.unlockOnTargetBonus += 1;
       run.notes.push('特別営業: 季節のフェア');
+    },
+  },
+  {
+    id: 'morningMarket',
+    name: '朝市スタンド',
+    description: '朝のにぎわいを取り込み、短時間で来客を集めます。',
+    unlockKey: 'weekendServiceUnlocked',
+    apply(run) {
+      run.durationMs = Math.max(32000, run.durationMs - 8000);
+      run.visitorMultiplier *= 1.28;
+      run.unlockOnTargetBonus += 1;
+      run.notes.push('特別営業: 朝市スタンド');
+    },
+  },
+  {
+    id: 'dessertCourse',
+    name: 'ごほうびデザート会',
+    description: '甘い時間に寄せた営業で、単価とひらめきの伸びが良くなります。',
+    unlockKey: 'weekendServiceUnlocked',
+    apply(run) {
+      run.durationMs += 8000;
+      run.priceMultiplier *= 1.16;
+      run.insightOnTargetBonus += 1;
+      run.notes.push('特別営業: ごほうびデザート会');
     },
   },
 ];
@@ -717,6 +808,59 @@ const COMBO_DEFS = [
       run.notes.push('本日のコンボ: 夜ふかしラテ時間');
     },
   },
+  {
+    id: 'honeyStory',
+    name: 'しおり付きトースト時間',
+    description: 'はちみつトーストとよみもの時間で、静かなごほうび感が広がります。',
+    hint: '新しいメニューと新しい営業スタイルを組み合わせる',
+    unlock(state) {
+      return state.systems.secretComboUnlocked && state.systems.storybookStyleUnlocked;
+    },
+    matches(preDay) {
+      return preDay.selectedMenuId === 'honeyToast' && preDay.selectedStyleId === 'storyShelf';
+    },
+    apply(run) {
+      run.priceMultiplier *= 1.08;
+      run.reputationGainMultiplier *= 1.14;
+      run.notes.push('本日のコンボ: しおり付きトースト時間');
+    },
+  },
+  {
+    id: 'mintMarket',
+    name: '朝いちばんのひんやり便り',
+    description: '朝市スタンドとミントゼリーで、軽やかな回転営業になります。',
+    hint: '新しい特別営業と爽やかなメニューを合わせる',
+    unlock(state) {
+      return state.systems.secretComboUnlocked && state.systems.weekendServiceUnlocked;
+    },
+    matches(preDay) {
+      return preDay.selectedServiceId === 'morningMarket' && preDay.selectedMenuId === 'mintJelly';
+    },
+    apply(run) {
+      run.visitorMultiplier *= 1.14;
+      run.targetMultiplier *= 0.94;
+      run.notes.push('本日のコンボ: 朝いちばんのひんやり便り');
+    },
+  },
+  {
+    id: 'letterDessert',
+    name: 'おたより付きデザート会',
+    description: 'おたより返しとごほうびデザート会で、やさしい余韻が残ります。',
+    hint: '新しい仕込みと甘い特別営業を合わせる',
+    unlock(state) {
+      return state.systems.secretComboUnlocked && state.systems.hospitalityPrepUnlocked;
+    },
+    matches(preDay) {
+      return (
+        preDay.selectedPrepId === 'letterReply' && preDay.selectedServiceId === 'dessertCourse'
+      );
+    },
+    apply(run) {
+      run.unlockOnTargetBonus += 1;
+      run.insightOnTargetBonus += 1;
+      run.notes.push('本日のコンボ: おたより付きデザート会');
+    },
+  },
 ];
 
 const DAY_EVENT_DEFS = [
@@ -785,6 +929,54 @@ const DAY_EVENT_DEFS = [
         apply(run) {
           run.salesMultiplier *= 1.07;
           run.notes.push('営業中イベント: おすすめを勧める');
+        },
+      },
+    ],
+  },
+  {
+    id: 'giftWrap',
+    title: '小さなおみやげを付ける？',
+    description: '帰り際のお客さんが、ちょっとした包みを喜びそうです。',
+    unlockKey: 'eventAlbumUnlocked',
+    choices: [
+      {
+        label: '包みを用意する',
+        detail: '売上補正が少し上がります。',
+        apply(run) {
+          run.salesMultiplier *= 1.08;
+          run.notes.push('営業中イベント: 包みを用意する');
+        },
+      },
+      {
+        label: '手書きメモを添える',
+        detail: '評判が少し伸びやすくなります。',
+        apply(run) {
+          run.reputationGainMultiplier *= 1.12;
+          run.notes.push('営業中イベント: 手書きメモを添える');
+        },
+      },
+    ],
+  },
+  {
+    id: 'windowSeat',
+    title: '窓辺席を整える？',
+    description: '外を眺めたいお客さんが増えてきました。',
+    unlockKey: 'eventAlbumUnlocked',
+    choices: [
+      {
+        label: '窓辺を主役にする',
+        detail: '来客が少し増えます。',
+        apply(run) {
+          run.visitorMultiplier *= 1.1;
+          run.notes.push('営業中イベント: 窓辺を主役にする');
+        },
+      },
+      {
+        label: '席数をそのまま保つ',
+        detail: '客単価が少し上がります。',
+        apply(run) {
+          run.priceMultiplier *= 1.08;
+          run.notes.push('営業中イベント: 席数をそのまま保つ');
         },
       },
     ],
@@ -1097,6 +1289,14 @@ function createDefaultState() {
       specialServiceUnlocked: false,
       festivalServiceUnlocked: false,
       dayEventUnlocked: false,
+      artisanMenuUnlocked: false,
+      hospitalityPrepUnlocked: false,
+      storybookStyleUnlocked: false,
+      terraceStyleUnlocked: false,
+      weekendServiceUnlocked: false,
+      secretComboUnlocked: false,
+      eventAlbumUnlocked: false,
+      thirdPrepBoostUnlocked: false,
     },
     preDay: {
       selectedBoostIds: [],
@@ -1277,8 +1477,20 @@ function ensurePreDaySelections() {
     )
     .slice(0, slotCount);
   if (
+    state.preDay.selectedMenuId &&
+    !getAvailableMenuOptions().some((entry) => entry.id === state.preDay.selectedMenuId)
+  ) {
+    state.preDay.selectedMenuId = null;
+  }
+  if (
+    state.preDay.selectedPrepId &&
+    !getAvailablePrepOptions().some((entry) => entry.id === state.preDay.selectedPrepId)
+  ) {
+    state.preDay.selectedPrepId = null;
+  }
+  if (
     state.preDay.selectedStyleId &&
-    !STYLE_OPTIONS.some((entry) => entry.id === state.preDay.selectedStyleId)
+    !getAvailableStyleOptions().some((entry) => entry.id === state.preDay.selectedStyleId)
   ) {
     state.preDay.selectedStyleId = null;
   }
@@ -1295,7 +1507,26 @@ function getPreDayBoostSlotCount() {
   if (!state.systems.prepBoostUnlocked) {
     return 0;
   }
+  if (state.systems.thirdPrepBoostUnlocked) {
+    return 3;
+  }
   return state.systems.secondPrepBoostUnlocked ? 2 : 1;
+}
+
+function isFeatureEntryUnlocked(entry) {
+  return !entry.unlockKey || Boolean(state.systems[entry.unlockKey]);
+}
+
+function getAvailableMenuOptions() {
+  return MENU_OPTIONS.filter((entry) => isFeatureEntryUnlocked(entry));
+}
+
+function getAvailablePrepOptions() {
+  return PREP_OPTIONS.filter((entry) => isFeatureEntryUnlocked(entry));
+}
+
+function getAvailableStyleOptions() {
+  return STYLE_OPTIONS.filter((entry) => isFeatureEntryUnlocked(entry));
 }
 
 function applyAchievementSystemUnlocks(showToasts = false, previousCount = 0) {
@@ -1324,11 +1555,11 @@ function applyAchievementSystemUnlocks(showToasts = false, previousCount = 0) {
 }
 
 function getAvailableSpecialServices() {
-  return SPECIAL_SERVICE_OPTIONS.filter((entry) => Boolean(state.systems[entry.unlockKey]));
+  return SPECIAL_SERVICE_OPTIONS.filter((entry) => isFeatureEntryUnlocked(entry));
 }
 
 function getStyleById(styleId) {
-  return STYLE_OPTIONS.find((entry) => entry.id === styleId) || null;
+  return getAvailableStyleOptions().find((entry) => entry.id === styleId) || null;
 }
 
 function getSpecialServiceById(serviceId) {
@@ -1767,7 +1998,8 @@ function offerDayEvent() {
   run.eventOffered = true;
   run.selectionPaused = true;
   run.overlayMode = 'event';
-  const eventDef = chooseRandom(DAY_EVENT_DEFS);
+  const availableEvents = DAY_EVENT_DEFS.filter((entry) => isFeatureEntryUnlocked(entry));
+  const eventDef = chooseRandom(availableEvents);
   run.eventId = eventDef.id;
   elements.eventTitle.textContent = eventDef.title;
   elements.eventDescription.textContent = eventDef.description;
@@ -2300,7 +2532,7 @@ function renderPrepOptions() {
 
   const menuRow = document.getElementById('menu-chip-row');
   if (menuRow) {
-    for (const menu of MENU_OPTIONS) {
+    for (const menu of getAvailableMenuOptions()) {
       const button = document.createElement('button');
       button.className = `select-chip ${state.preDay.selectedMenuId === menu.id ? 'active' : ''}`;
       button.disabled = isActive;
@@ -2317,7 +2549,7 @@ function renderPrepOptions() {
 
   const styleRow = document.getElementById('style-chip-row');
   if (styleRow) {
-    for (const style of STYLE_OPTIONS) {
+    for (const style of getAvailableStyleOptions()) {
       const button = document.createElement('button');
       button.className = `select-chip ${state.preDay.selectedStyleId === style.id ? 'active' : ''}`;
       button.disabled = isActive;
@@ -2354,7 +2586,7 @@ function renderPrepOptions() {
 
   const prepRow = document.getElementById('prep-chip-row');
   if (prepRow) {
-    for (const prep of PREP_OPTIONS) {
+    for (const prep of getAvailablePrepOptions()) {
       const button = document.createElement('button');
       button.className = `select-chip ${state.preDay.selectedPrepId === prep.id ? 'active' : ''}`;
       button.disabled = isActive;
@@ -3340,6 +3572,62 @@ var EXTRA_RESEARCH_NODES = [
       state.permanent.cooldownMultiplier *= 0.92;
     },
   },
+  {
+    id: 'artisanMenuBook',
+    name: '季節メニューブック',
+    cost: 9,
+    description: '終盤向けのおすすめメニューが2つ増えます。',
+    effectText: '新しいおすすめメニューを解放',
+    requires: ['featuredMenu', 'dessertStand'],
+    apply(state) {
+      state.systems.artisanMenuUnlocked = true;
+    },
+  },
+  {
+    id: 'hospitalityNotes',
+    name: 'おもてなし手帖',
+    cost: 9,
+    description: '営業前の仕込みに、やさしい対応メモが増えます。',
+    effectText: '新しい仕込みを解放',
+    requires: ['prepStation', 'smilePractice'],
+    apply(state) {
+      state.systems.hospitalityPrepUnlocked = true;
+    },
+  },
+  {
+    id: 'weekendCalendar',
+    name: '週末カレンダー',
+    cost: 10,
+    description: '特別営業の幅が広がり、終盤向けの営業が追加されます。',
+    effectText: '新しい特別営業を解放',
+    requires: ['serviceMoments', 'eveningRhythm'],
+    apply(state) {
+      state.systems.weekendServiceUnlocked = true;
+    },
+  },
+  {
+    id: 'secretRecipeBook',
+    name: 'ひみつの組み合わせ帳',
+    cost: 11,
+    description: '終盤向けのコンボが見つかるようになります。',
+    effectText: '新しいコンボを解放',
+    requires: ['comboRecipe', 'codexRibbon'],
+    apply(state) {
+      state.systems.secretComboUnlocked = true;
+      state.systems.codexHintUnlocked = true;
+    },
+  },
+  {
+    id: 'eventAlbum',
+    name: 'できごとアルバム',
+    cost: 10,
+    description: '営業中の小さなできごとが増えて、流れに変化が出ます。',
+    effectText: '営業中イベントを追加',
+    requires: ['serviceMoments', 'smilePractice'],
+    apply(state) {
+      state.systems.eventAlbumUnlocked = true;
+    },
+  },
 ];
 
 var EXTRA_TREE_NODES = [
@@ -3413,6 +3701,66 @@ var EXTRA_TREE_NODES = [
     effectText: '評判効果 +10%',
     apply(state) {
       state.permanent.reputationEffectMultiplier *= 1.1;
+    },
+  },
+  {
+    id: 'storybookStand',
+    name: '絵本スタンド',
+    description: '落ち着いた営業スタイル「よみもの時間」を解放します。',
+    cost: 7,
+    branch: '左ルート',
+    requires: ['letterSet'],
+    effectText: '新しい営業スタイルを解放',
+    apply(state) {
+      state.systems.storybookStyleUnlocked = true;
+    },
+  },
+  {
+    id: 'terraceSign',
+    name: 'テラス看板',
+    description: '外の空気を活かす営業スタイル「テラスの風」を解放します。',
+    cost: 7,
+    branch: '右ルート',
+    requires: ['softCurtain'],
+    effectText: '新しい営業スタイルを解放',
+    apply(state) {
+      state.systems.terraceStyleUnlocked = true;
+    },
+  },
+  {
+    id: 'thirdBoostSlot',
+    name: '準備メモ3冊目',
+    description: '営業前ブーストを3つまで選べるようになります。',
+    cost: 8,
+    branch: '中央ルート',
+    requires: ['cakeStand'],
+    effectText: '営業前ブースト枠が3つになる',
+    apply(state) {
+      state.systems.thirdPrepBoostUnlocked = true;
+    },
+  },
+  {
+    id: 'marketBanner',
+    name: '街角バナー',
+    description: '街の流れを読みやすくして、来客に寄せた営業を支えます。',
+    cost: 8,
+    branch: '右ルート',
+    requires: ['terraceSign'],
+    effectText: '来客速度 +10%',
+    apply(state) {
+      state.permanent.visitorMultiplier *= 1.1;
+    },
+  },
+  {
+    id: 'hostDiary',
+    name: 'おもてなし日記',
+    description: '手元の工夫がまとまり、評判の伸びが少し安定します。',
+    cost: 8,
+    branch: '左ルート',
+    requires: ['storybookStand'],
+    effectText: '評判獲得 +10%',
+    apply(state) {
+      state.permanent.reputationGainMultiplier *= 1.1;
     },
   },
 ];
