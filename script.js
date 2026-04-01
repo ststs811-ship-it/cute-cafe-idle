@@ -1304,6 +1304,11 @@ function renderResources() {
 function renderOperations() {
   const run = state.dayRun;
   const targetValue = run.active ? getCurrentTargetValue() : getPreviewTargetValue();
+  elements.dayStatus.dataset.state = run.active
+    ? run.selectionPaused
+      ? 'paused'
+      : 'active'
+    : 'ready';
   elements.dayStatus.textContent = run.active
     ? run.selectionPaused
       ? '強化選択中'
@@ -1457,6 +1462,16 @@ function renderPrepOptions() {
       : isActive
         ? '営業中は固定'
         : '営業前に選べます';
+  elements.prepStatus.dataset.state =
+    cards.length === 1 &&
+    !state.systems.prepBoostUnlocked &&
+    !state.systems.menuChoiceUnlocked &&
+    !state.systems.modifierRerollUnlocked &&
+    !state.systems.prepChoiceUnlocked
+      ? 'locked'
+      : isActive
+        ? 'disabled'
+        : 'ready';
   elements.prepGrid.innerHTML = cards.join('');
 
   const rerollButton = document.getElementById('reroll-modifier-button');
@@ -1569,7 +1584,7 @@ function renderAchievements() {
   elements.achievementUnlocks.innerHTML = AUTO_UNLOCKS.map((unlock) => {
     const active = count >= unlock.threshold;
     return `
-      <article class="unlock-chip">
+      <article class="unlock-chip ${active ? 'active' : 'locked'}">
         <strong>${unlock.label}</strong>
         <div>${unlock.description}</div>
         <small>${active ? '開放済み' : `実績 ${unlock.threshold} 個で開放`}</small>
