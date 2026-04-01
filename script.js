@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'cuteCafeIdleSaveV1';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 
 const DAILY_MODIFIERS = [
   {
@@ -404,9 +404,19 @@ const AUTO_UNLOCKS = [
     description: '実績数に応じて売上に小さな補正が付きます。',
   },
   {
+    threshold: 8,
+    label: '特別営業',
+    description: '営業前に特別営業を選べるようになります。',
+  },
+  {
     threshold: 10,
     label: 'ごほうびポイント',
     description: '営業目標達成時の解放ポイントがさらに +1 されます。',
+  },
+  {
+    threshold: 14,
+    label: '季節のフェア',
+    description: '特別営業に「季節のフェア」が追加されます。',
   },
 ];
 
@@ -537,6 +547,158 @@ const PREP_OPTIONS = [
   },
 ];
 
+const STYLE_OPTIONS = [
+  {
+    id: 'quickCounter',
+    name: 'さくっと回転',
+    description: '短めの営業で客足を回し、テンポ良く売ります。',
+    apply(run) {
+      run.durationMs = Math.max(32000, run.durationMs - 8000);
+      run.visitorMultiplier *= 1.22;
+      run.targetMultiplier *= 0.97;
+      run.notes.push('営業スタイル: さくっと回転');
+    },
+  },
+  {
+    id: 'cozySalon',
+    name: 'ゆったり滞在',
+    description: '長居したくなる空気で客単価と評判を伸ばします。',
+    apply(run) {
+      run.durationMs += 9000;
+      run.priceMultiplier *= 1.12;
+      run.reputationGainMultiplier *= 1.18;
+      run.targetMultiplier *= 1.06;
+      run.notes.push('営業スタイル: ゆったり滞在');
+    },
+  },
+  {
+    id: 'sweetShowcase',
+    name: 'ショーケース推し',
+    description: '映える見せ方で看板メニューを主役にします。',
+    apply(run) {
+      run.priceMultiplier *= 1.08;
+      run.salesMultiplier *= 1.08;
+      run.perkOfferTimeMultiplier *= 0.92;
+      run.notes.push('営業スタイル: ショーケース推し');
+    },
+  },
+];
+
+const SPECIAL_SERVICE_OPTIONS = [
+  {
+    id: 'takeoutRush',
+    name: 'テイクアウトデー',
+    description: '回転重視の特別営業。短時間で客足を集めます。',
+    unlockKey: 'specialServiceUnlocked',
+    apply(run) {
+      run.durationMs = Math.max(32000, run.durationMs - 10000);
+      run.visitorMultiplier *= 1.35;
+      run.targetMultiplier *= 0.94;
+      run.reputationOnTargetBonus += 1;
+      run.notes.push('特別営業: テイクアウトデー');
+    },
+  },
+  {
+    id: 'nightCafe',
+    name: '夜カフェ営業',
+    description: '少し長めに開けて、落ち着いた高単価営業に寄せます。',
+    unlockKey: 'specialServiceUnlocked',
+    apply(run) {
+      run.durationMs += 12000;
+      run.priceMultiplier *= 1.18;
+      run.targetMultiplier *= 1.08;
+      run.insightOnTargetBonus += 1;
+      run.notes.push('特別営業: 夜カフェ営業');
+    },
+  },
+  {
+    id: 'seasonalFair',
+    name: '季節のフェア',
+    description: '実績を積むと解放。今日だけ街の注目を集めます。',
+    unlockKey: 'festivalServiceUnlocked',
+    apply(run) {
+      run.visitorMultiplier *= 1.18;
+      run.salesMultiplier *= 1.12;
+      run.reputationGainMultiplier *= 1.1;
+      run.targetMultiplier *= 1.05;
+      run.unlockOnTargetBonus += 1;
+      run.notes.push('特別営業: 季節のフェア');
+    },
+  },
+];
+
+const COMBO_DEFS = [
+  {
+    id: 'strawberryShowcase',
+    name: 'いちご映えセット',
+    description: 'いちごラテとショーケース推しで写真映えが広がります。',
+    matches(preDay) {
+      return (
+        preDay.selectedMenuId === 'strawberryLatte' && preDay.selectedStyleId === 'sweetShowcase'
+      );
+    },
+    apply(run) {
+      run.priceMultiplier *= 1.08;
+      run.reputationGainMultiplier *= 1.16;
+      run.notes.push('本日のコンボ: いちご映えセット');
+    },
+  },
+  {
+    id: 'cookieRegulars',
+    name: 'おかえりプレート',
+    description: 'クッキー盛りと常連メモでいつものお客さんが増えます。',
+    matches(preDay) {
+      return preDay.selectedMenuId === 'cookiePlate' && preDay.selectedPrepId === 'regularNotes';
+    },
+    apply(run) {
+      run.visitorMultiplier *= 1.12;
+      run.targetMultiplier *= 0.95;
+      run.notes.push('本日のコンボ: おかえりプレート');
+    },
+  },
+  {
+    id: 'puddingCheck',
+    name: 'ごほうび追い風',
+    description: 'プリンと最終チェックがかみ合い、ブースト回りが軽くなります。',
+    matches(preDay) {
+      return preDay.selectedMenuId === 'rewardPudding' && preDay.selectedPrepId === 'boostCheck';
+    },
+    apply(run) {
+      run.extraBoostDuration += 3;
+      run.firstBoostCooldownCutMs += 5000;
+      run.notes.push('本日のコンボ: ごほうび追い風');
+    },
+  },
+  {
+    id: 'takeoutCookie',
+    name: '寄り道おやつ便',
+    description: 'テイクアウトデーにクッキー盛りを合わせて客足をさらに集めます。',
+    matches(preDay) {
+      return preDay.selectedServiceId === 'takeoutRush' && preDay.selectedMenuId === 'cookiePlate';
+    },
+    apply(run) {
+      run.visitorMultiplier *= 1.16;
+      run.salesMultiplier *= 1.05;
+      run.notes.push('本日のコンボ: 寄り道おやつ便');
+    },
+  },
+  {
+    id: 'nightLatte',
+    name: '夜ふかしラテ時間',
+    description: '夜カフェ営業といちごラテでゆったりした高単価営業になります。',
+    matches(preDay) {
+      return (
+        preDay.selectedServiceId === 'nightCafe' && preDay.selectedMenuId === 'strawberryLatte'
+      );
+    },
+    apply(run) {
+      run.priceMultiplier *= 1.1;
+      run.reputationGainMultiplier *= 1.12;
+      run.notes.push('本日のコンボ: 夜ふかしラテ時間');
+    },
+  },
+];
+
 const RESEARCH_NODES = [
   {
     id: 'prepBoostKit',
@@ -591,6 +753,28 @@ const RESEARCH_NODES = [
     requires: ['featuredMenu'],
     apply(state) {
       state.systems.prepChoiceUnlocked = true;
+    },
+  },
+  {
+    id: 'serviceStyle',
+    name: '営業スタイルノート',
+    cost: 4,
+    description: '営業前にその日の売り方をひとつ選べるようになります。',
+    effectText: '営業スタイルを選択可能',
+    requires: ['prepStation'],
+    apply(state) {
+      state.systems.styleChoiceUnlocked = true;
+    },
+  },
+  {
+    id: 'comboRecipe',
+    name: '組み合わせメモ',
+    cost: 5,
+    description: 'おすすめや仕込み、営業スタイルの相性で特別なコンボが発生します。',
+    effectText: '本日のコンボが発生',
+    requires: ['serviceStyle'],
+    apply(state) {
+      state.systems.comboRecipeUnlocked = true;
     },
   },
 ];
@@ -685,11 +869,17 @@ function createDefaultState() {
       menuChoiceUnlocked: false,
       modifierRerollUnlocked: false,
       prepChoiceUnlocked: false,
+      styleChoiceUnlocked: false,
+      comboRecipeUnlocked: false,
+      specialServiceUnlocked: false,
+      festivalServiceUnlocked: false,
     },
     preDay: {
       selectedBoostIds: [],
       selectedMenuId: null,
       selectedPrepId: null,
+      selectedStyleId: null,
+      selectedServiceId: null,
       forecastModifierId: null,
       modifierRerollUsed: false,
     },
@@ -747,8 +937,12 @@ function createIdleRunState() {
     perkOfferTimeMultiplier: 1,
     insightOnTargetBonus: 0,
     reputationOnTargetBonus: 0,
+    unlockOnTargetBonus: 0,
     firstBoostCooldownCutMs: 0,
     firstBoostDiscountUsed: false,
+    styleId: null,
+    serviceId: null,
+    comboId: null,
     startingBoosts: [],
     boostStates: {},
     perkOffered: false,
@@ -807,6 +1001,7 @@ function rebuildUnlockEffects() {
       research.apply(state);
     }
   }
+  applyAchievementSystemUnlocks();
 }
 
 function initializeBoostStates(run) {
@@ -831,6 +1026,12 @@ function ensurePreDaySelections() {
   if (!state.systems.prepChoiceUnlocked) {
     state.preDay.selectedPrepId = null;
   }
+  if (!state.systems.styleChoiceUnlocked) {
+    state.preDay.selectedStyleId = null;
+  }
+  if (!state.systems.specialServiceUnlocked) {
+    state.preDay.selectedServiceId = null;
+  }
   const slotCount = getPreDayBoostSlotCount();
   state.preDay.selectedBoostIds = state.preDay.selectedBoostIds
     .filter(
@@ -838,6 +1039,19 @@ function ensurePreDaySelections() {
         PRE_DAY_BOOSTS.some((entry) => entry.id === id) && list.indexOf(id) === index,
     )
     .slice(0, slotCount);
+  if (
+    state.preDay.selectedStyleId &&
+    !STYLE_OPTIONS.some((entry) => entry.id === state.preDay.selectedStyleId)
+  ) {
+    state.preDay.selectedStyleId = null;
+  }
+  const availableServices = getAvailableSpecialServices();
+  if (
+    state.preDay.selectedServiceId &&
+    !availableServices.some((entry) => entry.id === state.preDay.selectedServiceId)
+  ) {
+    state.preDay.selectedServiceId = null;
+  }
 }
 
 function getPreDayBoostSlotCount() {
@@ -845,6 +1059,50 @@ function getPreDayBoostSlotCount() {
     return 0;
   }
   return state.systems.secondPrepBoostUnlocked ? 2 : 1;
+}
+
+function applyAchievementSystemUnlocks(showToasts = false, previousCount = 0) {
+  const count = getAchievementCount();
+  const unlockDefs = [
+    {
+      threshold: 8,
+      key: 'specialServiceUnlocked',
+      title: '特別営業が増えました',
+      body: '営業前の準備に特別営業が追加されました。',
+    },
+    {
+      threshold: 14,
+      key: 'festivalServiceUnlocked',
+      title: '季節のフェアが増えました',
+      body: '特別営業に「季節のフェア」が追加されました。',
+    },
+  ];
+  for (const unlock of unlockDefs) {
+    const unlocked = count >= unlock.threshold;
+    state.systems[unlock.key] = unlocked;
+    if (showToasts && unlocked && previousCount < unlock.threshold) {
+      showToast(unlock.title, unlock.body);
+    }
+  }
+}
+
+function getAvailableSpecialServices() {
+  return SPECIAL_SERVICE_OPTIONS.filter((entry) => Boolean(state.systems[entry.unlockKey]));
+}
+
+function getStyleById(styleId) {
+  return STYLE_OPTIONS.find((entry) => entry.id === styleId) || null;
+}
+
+function getSpecialServiceById(serviceId) {
+  return SPECIAL_SERVICE_OPTIONS.find((entry) => entry.id === serviceId) || null;
+}
+
+function getActiveComboDefinition(preDay = state.preDay) {
+  if (!state.systems.comboRecipeUnlocked) {
+    return null;
+  }
+  return COMBO_DEFS.find((entry) => entry.matches(preDay)) || null;
 }
 
 function hasResearch(researchId) {
@@ -988,6 +1246,25 @@ function applyPreDaySelections(run) {
       prep.apply(run);
     }
   }
+  if (state.preDay.selectedStyleId) {
+    const style = getStyleById(state.preDay.selectedStyleId);
+    if (style) {
+      run.styleId = style.id;
+      style.apply(run);
+    }
+  }
+  if (state.preDay.selectedServiceId) {
+    const service = getSpecialServiceById(state.preDay.selectedServiceId);
+    if (service && state.systems[service.unlockKey]) {
+      run.serviceId = service.id;
+      service.apply(run);
+    }
+  }
+  const combo = getActiveComboDefinition();
+  if (combo) {
+    run.comboId = combo.id;
+    combo.apply(run);
+  }
 }
 
 function applyStartingBoosts(run) {
@@ -1078,7 +1355,7 @@ function finishDay() {
       state.stats.bestTargetStreak,
       state.stats.currentTargetStreak,
     );
-    unlockGain += 2;
+    unlockGain += 2 + run.unlockOnTargetBonus;
     insightGain += 2 + run.insightOnTargetBonus;
     if (getAchievementCount() >= 10) {
       unlockGain += 1;
@@ -1114,6 +1391,9 @@ function finishDay() {
     insightGain,
     achievedTarget,
     modifierName: run.modifierName,
+    styleName: getStyleById(run.styleId)?.name || null,
+    serviceName: getSpecialServiceById(run.serviceId)?.name || null,
+    comboName: COMBO_DEFS.find((entry) => entry.id === run.comboId)?.name || null,
     targetValue,
     achievements: newAchievements.map((entry) => entry.name),
   };
@@ -1129,6 +1409,7 @@ function finishDay() {
 
 function evaluateAchievements() {
   const newlyUnlocked = [];
+  const previousCount = getAchievementCount();
   for (const achievement of ACHIEVEMENTS) {
     if (state.achievementsUnlocked.includes(achievement.id)) {
       continue;
@@ -1144,6 +1425,7 @@ function evaluateAchievements() {
       );
     }
   }
+  applyAchievementSystemUnlocks(true, previousCount);
   return newlyUnlocked;
 }
 
@@ -1443,6 +1725,16 @@ function renderPrepOptions() {
   ensurePreDaySelections();
   const isActive = state.dayRun.active;
   const cards = [];
+  const activeCombo = getActiveComboDefinition();
+  const specialServices = getAvailableSpecialServices();
+  const hasAnyUnlock =
+    state.systems.prepBoostUnlocked ||
+    state.systems.menuChoiceUnlocked ||
+    state.systems.modifierRerollUnlocked ||
+    state.systems.prepChoiceUnlocked ||
+    state.systems.styleChoiceUnlocked ||
+    state.systems.specialServiceUnlocked ||
+    state.systems.comboRecipeUnlocked;
 
   if (state.systems.modifierRerollUnlocked) {
     const modifier = getModifierById(state.preDay.forecastModifierId);
@@ -1458,6 +1750,16 @@ function renderPrepOptions() {
     `);
   }
 
+  if (state.systems.styleChoiceUnlocked) {
+    cards.push(`
+      <article class="prep-option feature-option">
+        <h3>営業スタイル</h3>
+        <p>その日の売り方をひとつ選んで、営業の流れを少し変えられます。</p>
+        <div class="chip-row" id="style-chip-row"></div>
+      </article>
+    `);
+  }
+
   if (state.systems.menuChoiceUnlocked) {
     cards.push(`
       <article class="prep-option">
@@ -1468,12 +1770,32 @@ function renderPrepOptions() {
     `);
   }
 
+  if (state.systems.specialServiceUnlocked) {
+    cards.push(`
+      <article class="prep-option special-option">
+        <h3>特別営業</h3>
+        <p>実績で増える特別な営業です。今日はひとつだけ選べます。</p>
+        <div class="chip-row" id="service-chip-row"></div>
+      </article>
+    `);
+  }
+
   if (state.systems.prepChoiceUnlocked) {
     cards.push(`
       <article class="prep-option">
         <h3>仕込み</h3>
         <p>営業前に1つだけ準備を選べます。</p>
         <div class="chip-row" id="prep-chip-row"></div>
+      </article>
+    `);
+  }
+
+  if (state.systems.comboRecipeUnlocked) {
+    cards.push(`
+      <article class="prep-option combo-option ${activeCombo ? 'combo-active' : 'combo-idle'}">
+        <h3>本日のコンボ</h3>
+        <p>${activeCombo ? activeCombo.name : 'まだ組み合わせは決まっていません。'}</p>
+        <small>${activeCombo ? activeCombo.description : 'おすすめ・仕込み・営業スタイル・特別営業の組み合わせで特別な効果が発生します。'}</small>
       </article>
     `);
   }
@@ -1517,6 +1839,12 @@ function renderPrepOptions() {
       : isActive
         ? 'disabled'
         : 'ready';
+  elements.prepStatus.textContent = !hasAnyUnlock
+    ? '研究で準備が増えます'
+    : isActive
+      ? '営業中は変更不可'
+      : '営業前に選べます';
+  elements.prepStatus.dataset.state = !hasAnyUnlock ? 'locked' : isActive ? 'disabled' : 'ready';
   elements.prepGrid.innerHTML = cards.join('');
 
   const rerollButton = document.getElementById('reroll-modifier-button');
@@ -1542,6 +1870,43 @@ function renderPrepOptions() {
         saveState(state);
       });
       menuRow.appendChild(button);
+    }
+  }
+
+  const styleRow = document.getElementById('style-chip-row');
+  if (styleRow) {
+    for (const style of STYLE_OPTIONS) {
+      const button = document.createElement('button');
+      button.className = `select-chip ${state.preDay.selectedStyleId === style.id ? 'active' : ''}`;
+      button.disabled = isActive;
+      button.textContent = style.name;
+      button.title = style.description;
+      button.addEventListener('click', () => {
+        state.preDay.selectedStyleId = state.preDay.selectedStyleId === style.id ? null : style.id;
+        renderPrepOptions();
+        saveState(state);
+      });
+      styleRow.appendChild(button);
+    }
+  }
+
+  const serviceRow = document.getElementById('service-chip-row');
+  if (serviceRow) {
+    for (const service of specialServices) {
+      const button = document.createElement('button');
+      button.className = `select-chip special-chip ${
+        state.preDay.selectedServiceId === service.id ? 'active' : ''
+      }`;
+      button.disabled = isActive;
+      button.textContent = service.name;
+      button.title = service.description;
+      button.addEventListener('click', () => {
+        state.preDay.selectedServiceId =
+          state.preDay.selectedServiceId === service.id ? null : service.id;
+        renderPrepOptions();
+        saveState(state);
+      });
+      serviceRow.appendChild(button);
     }
   }
 

@@ -636,6 +636,30 @@ h3 {
   padding: 18px;
 }
 
+.prep-option.feature-option {
+  border-color: #e7d3cc;
+  background: #fffaf9;
+}
+
+.prep-option.special-option {
+  border-color: #e8d8bc;
+  background: #fffaf1;
+}
+
+.prep-option.combo-option {
+  border-style: dashed;
+}
+
+.prep-option.combo-active {
+  border-color: #d8b3a7;
+  background: #fff4f1;
+  box-shadow: 0 12px 22px rgba(134, 95, 87, 0.08);
+}
+
+.prep-option.combo-idle {
+  background: #fffdfb;
+}
+
 .notes-card,
 .prep-card {
   padding: 20px;
@@ -743,6 +767,15 @@ h3 {
   color: var(--brown-strong);
   box-shadow: 0 8px 18px rgba(125, 90, 82, 0.12);
   transform: translateY(-1px);
+}
+
+.select-chip.special-chip {
+  background: #fffaf2;
+}
+
+.select-chip.special-chip.active {
+  background: #fff3e2;
+  border-color: #d6bb8d;
 }
 
 .info-list {
