@@ -3126,6 +3126,547 @@ function renderAchievements() {
   }).join('');
 }
 
+globalThis.__EXTRA_ACHIEVEMENTS = [
+  ...[2500, 5000, 8000, 12000, 18000, 25000, 35000, 50000, 70000, 100000].map((value, index) => ({
+    id: `salesExtra${index + 1}`,
+    name: `${index + 1}杯ぶんの夢`,
+    description: `累計売上を${value}にする`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.lifetimeMoney >= value,
+  })),
+  ...[220, 300, 420, 560, 720, 900, 1200, 1600].map((value, index) => ({
+    id: `bestDayExtra${index + 1}`,
+    name: `きょうの看板日和 ${index + 1}`,
+    description: `1日で売上${value}を達成する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.bestDayMoney >= value,
+  })),
+  ...[25, 35, 50, 70, 95, 130, 180].map((value, index) => ({
+    id: `repExtra${index + 1}`,
+    name: `うわさのカフェ ${index + 1}`,
+    description: `評判${value}に到達する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.reputation >= value,
+  })),
+  ...[5, 10, 20, 35, 50, 75, 100].map((value, index) => ({
+    id: `daysExtra${index + 1}`,
+    name: `営業ノート ${index + 1}冊目`,
+    description: `${value}日営業する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.daysCompleted >= value,
+  })),
+  ...[20, 35, 50, 80, 120].map((value, index) => ({
+    id: `boostExtra${index + 1}`,
+    name: `きらり接客 ${index + 1}`,
+    description: `ブーストを${value}回使う`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.boostUses >= value,
+  })),
+  ...[250, 400, 650, 900, 1300, 1800, 2500].map((value, index) => ({
+    id: `customerExtra${index + 1}`,
+    name: `いすが足りない ${index + 1}`,
+    description: `累計来客${value}人を達成する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.totalCustomers >= value,
+  })),
+  ...[7, 10, 14, 20].map((value, index) => ({
+    id: `streakExtra${index + 1}`,
+    name: `まいにち優秀 ${index + 1}`,
+    description: `売上目標を${value}日連続で達成する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.bestTargetStreak >= value,
+  })),
+  ...[10, 14, 18, 24].map((value, index) => ({
+    id: `treeExtra${index + 1}`,
+    name: `お店づくり名人 ${index + 1}`,
+    description: `解放ツリーを${value}個開放する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.unlockedNodes.length >= value,
+  })),
+  ...[3, 6, 9, 12].map((value, index) => ({
+    id: `researchExtra${index + 1}`,
+    name: `ひらめきノート ${index + 1}`,
+    description: `研究を${value}個解放する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.researchUnlocked.length >= value,
+  })),
+  ...[2, 4, 5].map((value, index) => ({
+    id: `comboDiscoverExtra${index + 1}`,
+    name: `しあわせレシピ ${index + 1}`,
+    description: `コンボを${value}個発見する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.length >= value,
+  })),
+  ...[5, 10, 20].map((value, index) => ({
+    id: `eventExtra${index + 1}`,
+    name: `今日はにぎやか ${index + 1}`,
+    description: `営業中のできごとに${value}回対応する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.eventChoices >= value,
+  })),
+  ...[3, 8, 15].map((value, index) => ({
+    id: `styleExtra${index + 1}`,
+    name: `空気づくりの達人 ${index + 1}`,
+    description: `営業スタイルを選んだ営業を${value}回行う`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.styleRuns >= value,
+  })),
+  ...[3, 8, 15].map((value, index) => ({
+    id: `serviceExtra${index + 1}`,
+    name: `特別営業コレクター ${index + 1}`,
+    description: `特別営業を選んだ営業を${value}回行う`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.serviceRuns >= value,
+  })),
+  ...[5, 10, 20].map((value, index) => ({
+    id: `comboRunExtra${index + 1}`,
+    name: `ぴったり相性 ${index + 1}`,
+    description: `コンボが発動した営業を${value}回行う`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.stats.comboRuns >= value,
+  })),
+  ...[10, 25, 40, 60].map((value, index) => ({
+    id: `insightExtra${index + 1}`,
+    name: `ひらめきのかけら ${index + 1}`,
+    description: `ひらめきを${value}集める`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.insight >= value,
+  })),
+  ...[15, 30, 50].map((value, index) => ({
+    id: `unlockPointExtra${index + 1}`,
+    name: `ごほうびの山 ${index + 1}`,
+    description: `解放ポイントを${value}所持する`,
+    reward: '解放ポイント +1',
+    condition: (state) => state.unlockPoints >= value,
+  })),
+  {
+    id: 'comboCookie',
+    name: 'ねこ皿が主役',
+    description: '「おかえりプレート」を発見する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.includes('cookieRegulars'),
+  },
+  {
+    id: 'comboPudding',
+    name: 'プリンの追い風',
+    description: '「ごほうび追い風」を発見する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.includes('puddingCheck'),
+  },
+  {
+    id: 'comboTakeout',
+    name: 'おみやげ大行進',
+    description: '「帰り道のクッキー袋」を発見する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.includes('takeoutCookie'),
+  },
+  {
+    id: 'comboNight',
+    name: 'ラテの灯り',
+    description: '「夜ふかしラテ時間」を発見する',
+    reward: '解放ポイント +1',
+    condition: (state) => state.discoveredCombos.includes('nightLatte'),
+  },
+];
+
+globalThis.__EXTRA_RESEARCH_NODES = [
+  {
+    id: 'codexBookmark',
+    name: '図鑑のしおり',
+    cost: 6,
+    description: '未発見コンボの図鑑ヒントを早めに読みやすくします。',
+    effectText: '甘いヒントメモを早期解放',
+    requires: ['comboRecipe'],
+    apply(state) {
+      state.systems.codexHintUnlocked = true;
+    },
+  },
+  {
+    id: 'hospitalityNotebook',
+    name: 'おもてなしノート',
+    cost: 6,
+    description: '営業中のできごとを活かしやすくします。',
+    effectText: '評判獲得 +8%',
+    requires: ['serviceMoments'],
+    apply(state) {
+      state.permanent.reputationGainMultiplier *= 1.08;
+    },
+  },
+  {
+    id: 'brunchPlanning',
+    name: 'ブランチ計画',
+    cost: 7,
+    description: '午前のにぎわいを意識した営業がしやすくなります。',
+    effectText: '来客速度 +8%',
+    requires: ['featuredMenu', 'serviceStyle'],
+    apply(state) {
+      state.permanent.visitorMultiplier *= 1.08;
+    },
+  },
+  {
+    id: 'dessertDisplay',
+    name: 'デザート台の工夫',
+    cost: 7,
+    description: '甘いメニューの見せ方が上手になり、売上が安定します。',
+    effectText: '売上補正 +6%',
+    requires: ['featuredMenu', 'comboRecipe'],
+    apply(state) {
+      state.permanent.salesMultiplier *= 1.06;
+    },
+  },
+  {
+    id: 'seasonGuide',
+    name: '季節メモ',
+    cost: 8,
+    description: '街の空気を読んだ仕込みが得意になります。',
+    effectText: '本日の補正 +6%',
+    requires: ['modifierReroll', 'serviceMoments'],
+    apply(state) {
+      state.permanent.dailyModifierStrength *= 1.06;
+    },
+  },
+  {
+    id: 'eveningRoutine',
+    name: '夕暮れルーティン',
+    cost: 8,
+    description: '営業の締め方が上手になり、ブースト回りが整います。',
+    effectText: 'ブースト再使用 -10%',
+    requires: ['serviceStyle', 'serviceMoments'],
+    apply(state) {
+      state.permanent.cooldownMultiplier *= 0.9;
+    },
+  },
+];
+
+globalThis.__EXTRA_TREE_NODES = [
+  {
+    id: 'welcomeBoard',
+    name: 'やさしい案内板',
+    description: '店先の雰囲気が整い、評判の伸びが安定します。',
+    cost: 5,
+    branch: '左ルート',
+    requires: ['loyaltyCard'],
+    effectText: '評判獲得 +10%',
+    apply(state) {
+      state.permanent.reputationGainMultiplier *= 1.1;
+    },
+  },
+  {
+    id: 'milkFoam',
+    name: 'ふわふわミルクフォーム',
+    description: 'ドリンクの満足度が上がり、基本単価が伸びます。',
+    cost: 5,
+    branch: '中央ルート',
+    requires: ['pastryLab'],
+    effectText: '基本単価 +10%',
+    apply(state) {
+      state.permanent.priceMultiplier *= 1.1;
+    },
+  },
+  {
+    id: 'windowGarden',
+    name: '窓辺のグリーン',
+    description: 'やさしい空気で評判の効きが強くなります。',
+    cost: 5,
+    branch: '右ルート',
+    requires: ['softLanterns'],
+    effectText: '評判効果 +10%',
+    apply(state) {
+      state.permanent.reputationEffectMultiplier *= 1.1;
+    },
+  },
+  {
+    id: 'letterSet',
+    name: 'おたよりセット',
+    description: '常連さんへのやり取りが増えて、来客の勢いが伸びます。',
+    cost: 6,
+    branch: '左ルート',
+    requires: ['welcomeBoard'],
+    effectText: '来客速度 +10%',
+    apply(state) {
+      state.permanent.visitorMultiplier *= 1.1;
+    },
+  },
+  {
+    id: 'cakeStand',
+    name: 'ケーキスタンド',
+    description: 'おすすめメニューがより映えるようになります。',
+    cost: 6,
+    branch: '中央ルート',
+    requires: ['milkFoam'],
+    effectText: '売上補正 +8%',
+    apply(state) {
+      state.permanent.salesMultiplier *= 1.08;
+    },
+  },
+  {
+    id: 'softCurtain',
+    name: 'やわらかカーテン',
+    description: '店内の居心地がよくなり、評判が売上に繋がりやすくなります。',
+    cost: 6,
+    branch: '右ルート',
+    requires: ['windowGarden'],
+    effectText: '評判効果 +12%',
+    apply(state) {
+      state.permanent.reputationEffectMultiplier *= 1.12;
+    },
+  },
+  {
+    id: 'smileCards',
+    name: 'にこにこメッセージカード',
+    description: '目標達成日のごほうびが少し豪華になります。',
+    cost: 7,
+    branch: '左ルート',
+    requires: ['letterSet'],
+    effectText: '評判獲得 +8%',
+    apply(state) {
+      state.permanent.reputationGainMultiplier *= 1.08;
+    },
+  },
+  {
+    id: 'seasonSweets',
+    name: '季節のおやつ棚',
+    description: '焼き菓子や限定メニューの魅力が増します。',
+    cost: 7,
+    branch: '中央ルート',
+    requires: ['cakeStand'],
+    effectText: '基本単価 +12%',
+    apply(state) {
+      state.permanent.priceMultiplier *= 1.12;
+    },
+  },
+  {
+    id: 'calmBreeze',
+    name: 'やさしい風の通り道',
+    description: 'お店の空気が整い、街のようすの良い面を拾いやすくなります。',
+    cost: 7,
+    branch: '右ルート',
+    requires: ['softCurtain'],
+    effectText: '本日の補正 +8%',
+    apply(state) {
+      state.permanent.dailyModifierStrength *= 1.08;
+    },
+  },
+];
+
+function getAchievementCatalog() {
+  return [...ACHIEVEMENT_DEFS, ...(globalThis.__EXTRA_ACHIEVEMENTS || [])];
+}
+
+function getAchievementUnlockCatalog() {
+  return [...ACHIEVEMENT_UNLOCKS];
+}
+
+function getTreeCatalog() {
+  return [...TREE_NODES, ...(globalThis.__EXTRA_TREE_NODES || [])];
+}
+
+function getResearchCatalog() {
+  return [...RESEARCH_NODES, ...(globalThis.__EXTRA_RESEARCH_NODES || [])];
+}
+
+function rebuildUnlockEffects() {
+  const defaults = createDefaultState();
+  state.permanent = defaults.permanent;
+  state.systems = { ...defaults.systems };
+  for (const nodeId of state.unlockedNodes) {
+    const node = getTreeCatalog().find((entry) => entry.id === nodeId);
+    if (node) {
+      node.apply(state);
+    }
+  }
+  for (const researchId of state.researchUnlocked) {
+    const research = getResearchCatalog().find((entry) => entry.id === researchId);
+    if (research) {
+      research.apply(state);
+    }
+  }
+  applyAchievementSystemUnlocks();
+}
+
+function purchaseNode(nodeId) {
+  const node = getTreeCatalog().find((entry) => entry.id === nodeId);
+  if (!node || state.unlockedNodes.includes(nodeId)) {
+    return;
+  }
+  const ready = node.requires.every((required) => state.unlockedNodes.includes(required));
+  if (!ready || state.unlockPoints < node.cost) {
+    return;
+  }
+  state.unlockPoints -= node.cost;
+  state.unlockedNodes.push(node.id);
+  node.apply(state);
+  evaluateAchievements();
+  renderAll();
+  saveState(state);
+}
+
+function purchaseResearch(researchId) {
+  const research = getResearchCatalog().find((entry) => entry.id === researchId);
+  if (!research || state.researchUnlocked.includes(researchId)) {
+    return;
+  }
+  const ready = research.requires.every((required) => hasResearch(required));
+  if (!ready || state.insight < research.cost) {
+    return;
+  }
+  state.insight -= research.cost;
+  state.researchUnlocked.push(research.id);
+  research.apply(state);
+  evaluateAchievements();
+  renderAll();
+  saveState(state);
+}
+
+function renderResearch() {
+  const researchCatalog = getResearchCatalog();
+  elements.researchSummary.textContent = `ひらめき ${formatWholeNumber(state.insight)}`;
+  elements.researchGrid.innerHTML = '';
+  for (const research of researchCatalog) {
+    const unlocked = hasResearch(research.id);
+    const ready = research.requires.every((required) => hasResearch(required));
+    const canBuy = ready && !unlocked && state.insight >= research.cost;
+    const card = document.createElement('article');
+    card.className = `research-card ${
+      unlocked ? 'unlocked' : canBuy ? 'ready' : ready ? 'available' : 'locked'
+    }`;
+    const prereqText =
+      research.requires.length === 0 ? 'なし' : research.requires.map(getResearchName).join(' / ');
+    const researchStatus = unlocked
+      ? '研究済み'
+      : canBuy
+        ? '研究可能'
+        : ready
+          ? `ひらめき不足 (${formatWholeNumber(state.insight)} / ${research.cost})`
+          : `前提: ${prereqText}`;
+    card.innerHTML = `
+      <h3>${research.name}</h3>
+      <p>${research.description}</p>
+      <small>${research.effectText}</small>
+      <div class="research-meta">
+        <span>コスト ${research.cost}</span>
+        <span>${researchStatus}</span>
+      </div>
+      <button class="tree-button" ${canBuy ? '' : 'disabled'}>${unlocked ? '研究済み' : '研究する'}</button>
+    `;
+    card
+      .querySelector('.tree-button')
+      .addEventListener('click', () => purchaseResearch(research.id));
+    elements.researchGrid.appendChild(card);
+  }
+}
+
+function renderTree() {
+  const treeCatalog = getTreeCatalog();
+  elements.treeGrid.innerHTML = '';
+  for (const node of treeCatalog) {
+    const purchased = state.unlockedNodes.includes(node.id);
+    const ready = node.requires.every((required) => state.unlockedNodes.includes(required));
+    const canBuy = ready && !purchased && state.unlockPoints >= node.cost;
+    const card = document.createElement('article');
+    card.className = `tree-card ${purchased ? 'purchased' : canBuy ? 'ready' : ready ? 'available' : 'locked'}`;
+    const prereqText =
+      node.requires.length === 0 ? 'なし' : node.requires.map(getNodeName).join(' / ');
+    const treeStatus = purchased
+      ? '解放済み'
+      : canBuy
+        ? '購入可能'
+        : ready
+          ? `ポイント不足 (${formatWholeNumber(state.unlockPoints)} / ${node.cost})`
+          : `前提: ${prereqText}`;
+    card.innerHTML = `
+      <div class="mini-label">${node.branch}</div>
+      <h3>${node.name}</h3>
+      <p>${node.description}</p>
+      <div class="tree-meta">
+        <span>コスト ${node.cost}</span>
+        <span>${treeStatus}</span>
+      </div>
+      <p>${node.effectText}</p>
+      <button class="tree-button" ${canBuy ? '' : 'disabled'}>${purchased ? '解放済み' : '解放する'}</button>
+    `;
+    card.querySelector('.tree-button').addEventListener('click', () => purchaseNode(node.id));
+    elements.treeGrid.appendChild(card);
+  }
+}
+
+function getNodeName(nodeId) {
+  const node = getTreeCatalog().find((entry) => entry.id === nodeId);
+  return node ? node.name : nodeId;
+}
+
+function getResearchName(researchId) {
+  const research = getResearchCatalog().find((entry) => entry.id === researchId);
+  return research ? research.name : researchId;
+}
+
+function evaluateAchievements() {
+  const newlyUnlocked = [];
+  const previousCount = getAchievementCount();
+  for (const achievement of getAchievementCatalog()) {
+    if (state.achievementsUnlocked.includes(achievement.id)) {
+      continue;
+    }
+    if (achievement.condition(state)) {
+      state.achievementsUnlocked.push(achievement.id);
+      state.unlockPoints += 1;
+      state.insight += 1;
+      newlyUnlocked.push(achievement);
+      showToast(
+        `実績達成: ${achievement.name}`,
+        `${achievement.description} / 解放ポイント +1 / ひらめき +1`,
+        'achievement',
+      );
+    }
+  }
+  applyAchievementSystemUnlocks(true, previousCount);
+  return newlyUnlocked;
+}
+
+function renderResources() {
+  elements.moneyValue.textContent = formatNumber(state.money);
+  elements.lifetimeMoney.textContent = formatNumber(state.lifetimeMoney);
+  elements.reputationValue.textContent = formatWholeNumber(state.reputation);
+  elements.unlockPointsValue.textContent = formatWholeNumber(state.unlockPoints);
+  elements.insightValue.textContent = formatWholeNumber(state.insight);
+  elements.dayCountValue.textContent = `${state.daysCompleted}日`;
+  elements.streakLabel.textContent = `連続目標達成 ${state.stats.currentTargetStreak}日`;
+  elements.achievementProgress.textContent = `実績 ${getAchievementCount()} / ${getAchievementCatalog().length}`;
+  elements.cafeGrade.textContent = getCafeGradeLabel();
+  maybePulseMainSales();
+}
+
+function renderAchievements() {
+  const achievementCatalog = getAchievementCatalog();
+  const count = getAchievementCount();
+  elements.achievementSummary.textContent = `${count} / ${achievementCatalog.length}達成`;
+  elements.achievementUnlocks.innerHTML = getAchievementUnlockCatalog()
+    .map((unlock) => {
+      const active = count >= unlock.threshold;
+      return `
+      <article class="unlock-chip ${active ? 'active' : 'locked'}">
+        <strong>${unlock.label}</strong>
+        <div>${unlock.description}</div>
+        <small>${active ? '解放済み' : `実績 ${unlock.threshold} 個で解放`}</small>
+      </article>
+    `;
+    })
+    .join('');
+  elements.achievementGrid.innerHTML = achievementCatalog
+    .map((achievement) => {
+      const unlocked = state.achievementsUnlocked.includes(achievement.id);
+      return `
+      <article class="achievement-card ${unlocked ? 'unlocked' : 'locked secret'}">
+        <h3>${unlocked ? achievement.name : '？？？'}</h3>
+        <p>${unlocked ? achievement.description : 'まだ見つかっていないごほうびです。'}</p>
+        <small>${unlocked ? '達成済み' : '未達成'}</small>
+        <div class="reward">${unlocked ? achievement.reward : 'ひみつのごほうび'}</div>
+      </article>
+    `;
+    })
+    .join('');
+}
+
 function triggerElementBurst(element, className = 'soft-pop') {
   if (!element) {
     return;
