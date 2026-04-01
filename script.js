@@ -1301,7 +1301,7 @@ function renderResources() {
   elements.cafeGrade.textContent = getCafeGradeLabel();
 }
 
-function renderOperations() {
+function renderOperations(includePrepOptions = true) {
   const run = state.dayRun;
   const targetValue = run.active ? getCurrentTargetValue() : getPreviewTargetValue();
   elements.dayStatus.dataset.state = run.active
@@ -1331,15 +1331,17 @@ function renderOperations() {
   elements.gradeBonusRow.classList.toggle('hidden', getAchievementCount() < 6);
   elements.gradeBonusValue.textContent = `x${formatNumber(getAchievementBonusMultiplier(), 2)}`;
   elements.startDayButton.disabled = run.active;
-  renderPrepOptions();
+  if (includePrepOptions) {
+    renderPrepOptions();
+  }
   renderRunNotes();
   renderLastResult();
 }
 
 function renderDynamic() {
   renderResources();
-  renderOperations();
-  renderBoosts();
+  renderOperations(false);
+  updateBoostDisplays();
 }
 
 function renderRunNotes() {
@@ -1391,6 +1393,49 @@ function renderBoosts() {
       </div>
     `;
     elements.boostGrid.appendChild(wrapper);
+  }
+  updateBoostDisplays(now);
+}
+
+function updateBoostDisplays(now = Date.now()) {
+  for (const card of elements.boostGrid.querySelectorAll('.boost-card')) {
+    const button = card.querySelector('[data-boost-id]');
+    if (!button) {
+      continue;
+    }
+
+    const boostId = button.dataset.boostId;
+    const boost = BOOST_DEFS[boostId];
+    const boostState = state.dayRun.boostStates[boostId] || { activeUntil: 0, cooldownUntil: 0 };
+    const activeLeft = Math.max(0, boostState.activeUntil - now);
+    const cooldownLeft = Math.max(0, boostState.cooldownUntil - now);
+    const canUseManually = getAvailableBoosts().some((entry) => entry.id === boostId);
+    const ready =
+      canUseManually && state.dayRun.active && cooldownLeft === 0 && !state.dayRun.selectionPaused;
+
+    card.className = `boost-card ${
+      activeLeft > 0 ? 'active-state' : ready ? 'ready' : cooldownLeft > 0 ? 'cooldown' : ''
+    }`.trim();
+
+    const statusLabel = card.querySelector('.boost-line span');
+    if (statusLabel) {
+      statusLabel.textContent =
+        activeLeft > 0
+          ? `効果中 ${formatSeconds(activeLeft)}`
+          : cooldownLeft > 0
+            ? `再使用まで ${formatSeconds(cooldownLeft)}`
+            : '準備完了';
+    }
+
+    button.disabled = !ready;
+    button.textContent = canUseManually ? '使う' : '自動発動';
+
+    if (boost?.description) {
+      const meta = card.querySelector('.boost-meta');
+      if (meta) {
+        meta.textContent = boost.description;
+      }
+    }
   }
 }
 
