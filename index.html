@@ -56,6 +56,7 @@
         </button>
         <button class="tab-button" data-tab="research">研究</button>
         <button class="tab-button" data-tab="tree">解放ツリー</button>
+        <button class="tab-button" data-tab="settings">設定</button>
       </nav>
 
       <main class="tab-panels">
@@ -83,9 +84,6 @@
                   <span id="time-left-label">営業時間 45秒</span>
                   <span id="daily-target-label">本日の売上目標 30</span>
                 </div>
-                <p class="target-hint" id="daily-target-hint">
-                  基本の営業力、評判、営業日数をもとに決まります。
-                </p>
                 <div class="progress-track">
                   <div class="progress-fill" id="day-progress-fill"></div>
                 </div>
@@ -217,6 +215,49 @@
               研究では倍率ではなく、営業前に選べる新しい行動を増やしていきます。
             </p>
             <div class="research-grid" id="research-grid"></div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-panel="settings">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">データ管理</p>
+                <h2>設定</h2>
+              </div>
+              <div class="status-pill">セーブの管理と初期化</div>
+            </div>
+            <div class="settings-grid">
+              <article class="notes-card">
+                <h3>セーブのエクスポート</h3>
+                <p>現在の進行状況をテキストとして出力できます。</p>
+                <div class="button-row">
+                  <button class="ghost-button" id="export-save-button">エクスポート</button>
+                  <button class="ghost-button" id="copy-save-button">コピー</button>
+                </div>
+              </article>
+              <article class="notes-card">
+                <h3>セーブのインポート</h3>
+                <p>エクスポートした文字列を貼り付けて復元できます。</p>
+                <div class="button-row">
+                  <button class="ghost-button" id="import-save-button">インポート</button>
+                </div>
+              </article>
+              <article class="notes-card danger-card">
+                <h3>全リセット</h3>
+                <p>すべての進行状況を削除して最初からやり直します。</p>
+                <div class="button-row">
+                  <button class="danger-button" id="reset-save-button">全リセット</button>
+                </div>
+              </article>
+            </div>
+            <label class="save-label" for="save-data-textarea">セーブデータ</label>
+            <textarea
+              id="save-data-textarea"
+              class="save-textarea"
+              spellcheck="false"
+              placeholder="ここにエクスポートしたセーブデータが表示されます"
+            ></textarea>
           </section>
         </section>
       </main>

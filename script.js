@@ -593,7 +593,6 @@ const elements = {
   dailyModifierDesc: document.getElementById('daily-modifier-desc'),
   timeLeftLabel: document.getElementById('time-left-label'),
   dailyTargetLabel: document.getElementById('daily-target-label'),
-  dailyTargetHint: document.getElementById('daily-target-hint'),
   dayProgressFill: document.getElementById('day-progress-fill'),
   dayMoneyValue: document.getElementById('day-money-value'),
   dayCustomersValue: document.getElementById('day-customers-value'),
@@ -620,6 +619,11 @@ const elements = {
   startDayButton: document.getElementById('start-day-button'),
   manualSaveButton: document.getElementById('manual-save-button'),
   resetRunButton: document.getElementById('reset-run-button'),
+  exportSaveButton: document.getElementById('export-save-button'),
+  copySaveButton: document.getElementById('copy-save-button'),
+  importSaveButton: document.getElementById('import-save-button'),
+  resetSaveButton: document.getElementById('reset-save-button'),
+  saveDataTextarea: document.getElementById('save-data-textarea'),
   perkOverlay: document.getElementById('perk-overlay'),
   perkOptions: document.getElementById('perk-options'),
   toastStack: document.getElementById('toast-stack'),
@@ -760,7 +764,7 @@ function ensureStateIntegrity() {
     : [];
   state.unlockedNodes = Array.isArray(state.unlockedNodes) ? state.unlockedNodes : [];
   state.researchUnlocked = Array.isArray(state.researchUnlocked) ? state.researchUnlocked : [];
-  if (!['operations', 'achievements', 'tree', 'research'].includes(state.currentTab)) {
+  if (!['operations', 'achievements', 'tree', 'research', 'settings'].includes(state.currentTab)) {
     state.currentTab = 'operations';
   }
   initializeBoostStates(state.dayRun);
@@ -858,6 +862,14 @@ function bindEvents() {
     showToast('今日の強化', state.dayRun.notes.join(' / '));
   });
 
+  elements.exportSaveButton.addEventListener('click', exportSaveData);
+  elements.copySaveButton.addEventListener('click', copySaveData);
+  elements.importSaveButton.addEventListener('click', importSaveData);
+  elements.resetSaveButton.addEventListener('click', resetAllProgress);
+  elements.saveDataTextarea.addEventListener('input', () => {
+    elements.saveDataTextarea.dataset.autofill = 'manual';
+  });
+
   elements.tabs.addEventListener('click', (event) => {
     const button = event.target.closest('[data-tab]');
     if (!button) {
@@ -870,6 +882,14 @@ function bindEvents() {
     state.currentTab = button.dataset.tab;
     renderTabs();
     saveState(state);
+  });
+
+  elements.boostGrid.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-boost-id]');
+    if (!button || button.disabled) {
+      return;
+    }
+    useBoost(button.dataset.boostId);
   });
 }
 
@@ -1231,6 +1251,7 @@ function renderAll() {
   renderAchievements();
   renderResearch();
   renderTree();
+  renderSettings();
 }
 
 function renderTabs() {
@@ -1273,7 +1294,6 @@ function renderOperations() {
     ? `残り ${formatSeconds(Math.max(0, run.durationMs - run.elapsedMs))}`
     : `営業時間 ${formatSeconds(run.durationMs)}`;
   elements.dailyTargetLabel.textContent = `本日の売上目標 ${formatNumber(targetValue)}`;
-  elements.dailyTargetHint.textContent = getTargetHintText(run, targetValue);
   elements.dayProgressFill.style.width = `${Math.min(100, (run.elapsedMs / run.durationMs) * 100)}%`;
   elements.dayMoneyValue.textContent = formatNumber(run.dayMoney);
   elements.dayCustomersValue.textContent = `${Math.floor(run.dayCustomers)}人`;
@@ -1339,12 +1359,9 @@ function renderBoosts() {
       <div class="boost-meta">${boost.description}</div>
       <div class="boost-line">
         <span>${activeLeft > 0 ? `発動中 ${formatSeconds(activeLeft)}` : cooldownLeft > 0 ? `再使用まで ${formatSeconds(cooldownLeft)}` : '準備完了'}</span>
-        <button class="boost-button" ${ready ? '' : 'disabled'}>${canUseManually ? '使う' : '自動発動'}</button>
+        <button class="boost-button" data-boost-id="${boost.id}" ${ready ? '' : 'disabled'}>${canUseManually ? '使う' : '自動発動'}</button>
       </div>
     `;
-    if (canUseManually) {
-      wrapper.querySelector('.boost-button').addEventListener('click', () => useBoost(boost.id));
-    }
     elements.boostGrid.appendChild(wrapper);
   }
 }
@@ -1517,6 +1534,12 @@ function renderResearch() {
   }
 }
 
+function renderSettings() {
+  if (elements.saveDataTextarea.dataset.autofill !== 'manual') {
+    elements.saveDataTextarea.value = serializeSaveData();
+  }
+}
+
 function renderAchievements() {
   const count = getAchievementCount();
   elements.achievementSummary.textContent = `${count} / ${ACHIEVEMENTS.length}達成`;
@@ -1575,6 +1598,85 @@ function saveState(nextState) {
   } catch (error) {
     console.warn('save failed', error);
   }
+}
+
+function serializeSaveData() {
+  return JSON.stringify(state, null, 2);
+}
+
+function exportSaveData() {
+  elements.saveDataTextarea.dataset.autofill = 'auto';
+  elements.saveDataTextarea.value = serializeSaveData();
+  elements.saveDataTextarea.focus();
+  elements.saveDataTextarea.select();
+  showToast('エクスポート準備完了', 'セーブデータをテキスト欄に出力しました。');
+}
+
+async function copySaveData() {
+  const text = serializeSaveData();
+  elements.saveDataTextarea.dataset.autofill = 'auto';
+  elements.saveDataTextarea.value = text;
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      showToast('コピーしました', 'セーブデータをクリップボードへコピーしました。');
+      return;
+    }
+  } catch (error) {
+    console.warn('clipboard copy failed', error);
+  }
+  elements.saveDataTextarea.focus();
+  elements.saveDataTextarea.select();
+  showToast('コピー準備完了', 'テキスト欄を選択しました。手動でコピーできます。');
+}
+
+function importSaveData() {
+  const raw = elements.saveDataTextarea.value.trim();
+  if (!raw) {
+    showToast('インポートできません', 'セーブデータ欄に文字列を貼り付けてください。');
+    return;
+  }
+  try {
+    const parsed = JSON.parse(raw);
+    applyLoadedState(parsed);
+    saveState(state);
+    elements.saveDataTextarea.dataset.autofill = 'auto';
+    elements.saveDataTextarea.value = serializeSaveData();
+    showToast('インポートしました', 'セーブデータを読み込みました。');
+  } catch (error) {
+    console.warn('import failed', error);
+    showToast('インポート失敗', 'セーブデータの形式が正しくありません。');
+  }
+}
+
+function resetAllProgress() {
+  const accepted = window.confirm(
+    '本当に全リセットしますか？\n現在の売上・実績・研究・解放状況はすべて失われます。',
+  );
+  if (!accepted) {
+    return;
+  }
+  applyLoadedState(createDefaultState());
+  saveState(state);
+  elements.saveDataTextarea.dataset.autofill = 'auto';
+  elements.saveDataTextarea.value = serializeSaveData();
+  showToast('全リセットしました', '最初の状態に戻しました。');
+}
+
+function applyLoadedState(source) {
+  const fresh = createDefaultState();
+  const loaded = { ...fresh, ...source };
+  for (const key of Object.keys(state)) {
+    delete state[key];
+  }
+  Object.assign(state, loaded);
+  ensureStateIntegrity();
+  if (state.dayRun.active) {
+    closePerkOverlay();
+    state.dayRun.active = false;
+    state.dayRun.selectionPaused = false;
+  }
+  renderAll();
 }
 
 function getProjectedSalesPerSecond() {
@@ -1644,31 +1746,6 @@ function getPreviewTargetValue() {
   applyPreDaySelections(previewRun);
   initializeDayTarget(previewRun);
   return Math.round(previewRun.dayTarget * previewRun.targetMultiplier);
-}
-
-function getTargetHintText(run, targetValue) {
-  const sourceRun = run.active && run.dayTarget > 0 ? run : getPreviewRunForHint();
-  const base = Math.round(sourceRun.targetBaseValue);
-  const growth = Math.round(sourceRun.targetGrowthValue);
-  const demand = Math.round(sourceRun.targetDemandValue);
-  const stretchPercent = Math.round((sourceRun.targetStretchMultiplier - 1) * 100);
-  return `基礎売上 ${base}、成長見込み ${growth}、評判需要 ${demand} をもとに、少し背伸びした ${formatNumber(targetValue)} に設定されています。営業日数に応じた上乗せは約 ${stretchPercent}% です。`;
-}
-
-function getPreviewRunForHint() {
-  const previewRun = createIdleRunState();
-  const modifier = getModifierById(state.preDay.forecastModifierId);
-  previewRun.durationMs = 45000 + Math.min(state.daysCompleted, 6) * 1500;
-  previewRun.basePrice = 8 + Math.floor(state.daysCompleted / 2);
-  previewRun.visitorRate = 0.75 + state.reputation * 0.035 + state.daysCompleted * 0.015;
-  previewRun.priceMultiplier = modifier.priceMultiplier;
-  previewRun.visitorMultiplier = modifier.visitorMultiplier;
-  previewRun.salesMultiplier = modifier.effectMultiplier;
-  previewRun.reputationMultiplier = modifier.reputationMultiplier;
-  previewRun.effectMultiplier = modifier.effectMultiplier;
-  applyPreDaySelections(previewRun);
-  initializeDayTarget(previewRun);
-  return previewRun;
 }
 
 function getCafeGradeLabel() {

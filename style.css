@@ -152,7 +152,8 @@ h1 {
 .cta-button,
 .boost-button,
 .tree-button,
-.perk-button {
+.perk-button,
+.danger-button {
   border: none;
   border-radius: 999px;
   cursor: pointer;
@@ -299,15 +300,8 @@ h1 {
 .tree-card p,
 .result-box,
 .tree-note,
-.target-hint,
 .overlay-copy {
   color: var(--subtle);
-}
-
-.target-hint {
-  margin: 8px 0 10px;
-  font-size: 0.92rem;
-  line-height: 1.5;
 }
 
 .ops-stats strong {
@@ -413,7 +407,8 @@ h1 {
 
 .cta-button,
 .ghost-button,
-.perk-button {
+.perk-button,
+.danger-button {
   padding: 13px 18px;
   font-weight: 700;
 }
@@ -428,11 +423,17 @@ h1 {
   color: var(--text);
 }
 
+.danger-button {
+  background: linear-gradient(135deg, #e8877e, #ca5c55);
+  color: #fffaf7;
+}
+
 .cta-button:hover,
 .ghost-button:hover,
 .boost-button:hover,
 .tree-button:hover,
 .perk-button:hover,
+.danger-button:hover,
 .tab-button:hover {
   transform: translateY(-1px);
 }
@@ -441,7 +442,8 @@ h1 {
 .achievement-grid,
 .tree-grid,
 .perk-options,
-.achievement-unlocks {
+.achievement-unlocks,
+.settings-grid {
   display: grid;
   gap: 14px;
 }
@@ -523,6 +525,35 @@ h1 {
 
 .achievement-grid {
   grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.settings-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-bottom: 18px;
+}
+
+.danger-card {
+  background: linear-gradient(180deg, rgba(255, 243, 240, 0.98), rgba(255, 232, 226, 0.95));
+}
+
+.save-label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--subtle);
+  font-weight: 700;
+}
+
+.save-textarea {
+  width: 100%;
+  min-height: 180px;
+  resize: vertical;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid var(--line);
+  background: rgba(255, 252, 248, 0.98);
+  color: var(--text);
+  font: inherit;
+  line-height: 1.5;
 }
 
 .achievement-card {
@@ -692,7 +723,8 @@ h1 {
   .achievement-grid,
   .achievement-unlocks,
   .boost-grid,
-  .perk-options {
+  .perk-options,
+  .settings-grid {
     grid-template-columns: 1fr;
   }
 
