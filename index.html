@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>こねこカフェ営業日誌</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page-shell">
+      <header class="hero">
+        <div>
+          <p class="eyebrow">Tiny Cafe Incremental</p>
+          <h1>こねこカフェ営業日誌</h1>
+          <p class="subtitle">1日ずつお店を開けて、売上と評判を育てていく小さなカフェ経営ゲーム</p>
+        </div>
+        <div class="hero-badge" id="cafe-grade-card">
+          <span>カフェランク</span>
+          <strong id="cafe-grade">ふつうの喫茶店</strong>
+          <small id="achievement-progress">実績 0 / 20</small>
+        </div>
+      </header>
+
+      <section class="resource-bar">
+        <article class="resource-card">
+          <span class="label">売上</span>
+          <strong id="money-value">0</strong>
+          <small>累計 <span id="lifetime-money">0</span></small>
+        </article>
+        <article class="resource-card">
+          <span class="label">評判</span>
+          <strong id="reputation-value">0</strong>
+          <small>来客に影響します</small>
+        </article>
+        <article class="resource-card accent">
+          <span class="label">解放ポイント</span>
+          <strong id="unlock-points-value">0</strong>
+          <small>ツリーで使います</small>
+        </article>
+        <article class="resource-card accent">
+          <span class="label">ひらめき</span>
+          <strong id="insight-value">0</strong>
+          <small>研究に使います</small>
+        </article>
+        <article class="resource-card soft">
+          <span class="label">営業日数</span>
+          <strong id="day-count-value">0日</strong>
+          <small id="streak-label">連続目標達成 0日</small>
+        </article>
+      </section>
+
+      <nav class="tabs" id="tabs">
+        <button class="tab-button active" data-tab="operations">営業</button>
+        <button class="tab-button hidden" data-tab="achievements" id="achievements-tab-button">
+          実績
+        </button>
+        <button class="tab-button" data-tab="research">研究</button>
+        <button class="tab-button" data-tab="tree">解放ツリー</button>
+      </nav>
+
+      <main class="tab-panels">
+        <section class="tab-panel active" data-panel="operations">
+          <div class="main-grid">
+            <section class="panel primary">
+              <div class="panel-head">
+                <div>
+                  <p class="panel-kicker">営業管理</p>
+                  <h2>本日の営業</h2>
+                </div>
+                <div class="status-pill" id="day-status">準備中</div>
+              </div>
+
+              <div class="day-modifier" id="daily-modifier-card">
+                <div>
+                  <span class="mini-label">本日の修飾子</span>
+                  <strong id="daily-modifier-name">未設定</strong>
+                </div>
+                <p id="daily-modifier-desc">営業開始でランダムに決まります。</p>
+              </div>
+
+              <div class="progress-block">
+                <div class="progress-meta">
+                  <span id="time-left-label">営業時間 45秒</span>
+                  <span id="daily-target-label">本日の目標 30</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-fill" id="day-progress-fill"></div>
+                </div>
+              </div>
+
+              <div class="ops-stats">
+                <article>
+                  <span>本日の売上</span>
+                  <strong id="day-money-value">0</strong>
+                </article>
+                <article>
+                  <span>本日の来客</span>
+                  <strong id="day-customers-value">0人</strong>
+                </article>
+                <article>
+                  <span>毎秒の見込み売上</span>
+                  <strong id="sales-rate-value">0</strong>
+                </article>
+              </div>
+
+              <div class="button-row">
+                <button class="cta-button" id="start-day-button">1日営業を開始</button>
+                <button class="ghost-button" id="manual-save-button">手動保存</button>
+                <button class="ghost-button" id="reset-run-button">今日の強化を確認</button>
+              </div>
+
+              <div class="prep-card">
+                <div class="panel-head compact">
+                  <div>
+                    <p class="panel-kicker">営業前の準備</p>
+                    <h3>今日のひと工夫</h3>
+                  </div>
+                  <div class="status-pill" id="prep-status">研究で行動が増えます</div>
+                </div>
+                <div class="prep-grid" id="prep-grid"></div>
+              </div>
+
+              <div class="boost-grid" id="boost-grid"></div>
+            </section>
+
+            <section class="panel secondary">
+              <div class="panel-head">
+                <div>
+                  <p class="panel-kicker">営業メモ</p>
+                  <h2>店舗情報</h2>
+                </div>
+              </div>
+
+              <div class="info-list">
+                <div class="info-row">
+                  <span>基本単価</span>
+                  <strong id="base-price-value">0</strong>
+                </div>
+                <div class="info-row">
+                  <span>来客速度</span>
+                  <strong id="visitor-rate-value">0人/秒</strong>
+                </div>
+                <div class="info-row">
+                  <span>評判補正</span>
+                  <strong id="reputation-effect-value">x1.00</strong>
+                </div>
+                <div class="info-row">
+                  <span>本日の補正</span>
+                  <strong id="today-multiplier-value">x1.00</strong>
+                </div>
+                <div class="info-row hidden" id="grade-bonus-row">
+                  <span>カフェランク補正</span>
+                  <strong id="grade-bonus-value">x1.00</strong>
+                </div>
+              </div>
+
+              <div class="notes-card">
+                <h3>今日だけの強化</h3>
+                <ul id="run-bonus-list" class="bonus-list">
+                  <li>まだありません</li>
+                </ul>
+              </div>
+
+              <div class="notes-card">
+                <h3>最新の営業結果</h3>
+                <div id="last-result-box" class="result-box">
+                  営業終了後にここへ結果が表示されます。
+                </div>
+              </div>
+            </section>
+          </div>
+        </section>
+
+        <section class="tab-panel" data-panel="achievements">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">コレクション</p>
+                <h2>実績</h2>
+              </div>
+              <div class="status-pill" id="achievement-summary">0 / 20達成</div>
+            </div>
+            <div class="achievement-unlocks" id="achievement-unlocks"></div>
+            <div class="achievement-grid" id="achievement-grid"></div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-panel="tree">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">成長</p>
+                <h2>解放ツリー</h2>
+              </div>
+              <div class="status-pill">分岐で育て方が変わります</div>
+            </div>
+            <p class="tree-note">
+              ノードを開放すると恒久強化や新機能が増えます。必要な前提ノードが開いていると購入できます。
+            </p>
+            <div class="tree-grid" id="tree-grid"></div>
+          </section>
+        </section>
+
+        <section class="tab-panel" data-panel="research">
+          <section class="panel">
+            <div class="panel-head">
+              <div>
+                <p class="panel-kicker">新しい遊び</p>
+                <h2>研究</h2>
+              </div>
+              <div class="status-pill" id="research-summary">ひらめき 0</div>
+            </div>
+            <p class="tree-note">
+              研究では倍率ではなく、営業前に選べる新しい行動を増やしていきます。
+            </p>
+            <div class="research-grid" id="research-grid"></div>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="overlay hidden" id="perk-overlay" aria-hidden="true">
+      <div class="overlay-card">
+        <p class="panel-kicker">ランダム強化</p>
+        <h2>今日だけのひと工夫を選びましょう</h2>
+        <p class="overlay-copy">営業を少し止めて選べます。今日の残り時間だけ効果があります。</p>
+        <div class="perk-options" id="perk-options"></div>
+      </div>
+    </div>
+
+    <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>

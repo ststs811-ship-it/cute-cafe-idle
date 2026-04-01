@@ -1,0 +1,17 @@
+{
+  "name": "cute-cafe-idle",
+  "version": "1.0.0",
+  "description": "",
+  "main": "script.js",
+  "scripts": {
+    "format": "prettier --write \"*.{html,css,js,json}\"",
+    "format:check": "prettier --check \"*.{html,css,js,json}\""
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "prettier": "^3.8.1"
+  }
+}
