@@ -356,6 +356,13 @@ h3 {
   box-shadow: 0 8px 16px rgba(124, 91, 82, 0.09);
 }
 
+.layer-chip:disabled {
+  opacity: 0.42;
+  cursor: default;
+  box-shadow: none;
+  transform: none;
+}
+
 .tab-panels,
 .tab-panel.active {
   display: block;

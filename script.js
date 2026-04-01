@@ -867,6 +867,7 @@ const RESEARCH_NODES = [
     requires: ['serviceStyle'],
     apply(state) {
       state.systems.comboRecipeUnlocked = true;
+      state.systems.codexUnlocked = true;
     },
   },
   {
@@ -1077,6 +1078,7 @@ function createDefaultState() {
     discoveredCombos: [],
     systems: {
       achievementsTabUnlocked: false,
+      codexUnlocked: false,
       secondBoostUnlocked: false,
       extraPerkChoice: false,
       prepBoostUnlocked: false,
@@ -1163,6 +1165,7 @@ function createIdleRunState() {
     eventId: null,
     eventOffered: false,
     eventResolved: false,
+    overlayMode: null,
     startingBoosts: [],
     boostStates: {},
     perkOffered: false,
@@ -1404,7 +1407,11 @@ function bindEvents() {
 
   elements.operationLayerTabs?.addEventListener('click', (event) => {
     const button = event.target.closest('[data-op-layer]');
-    if (!button) {
+    if (!button || button.disabled) {
+      return;
+    }
+    if (button.dataset.opLayer === 'result' && !state.lastResult) {
+      showToast('まだ結果はありません', '1日営業を終えると結果を見返せます。');
       return;
     }
     state.operationView = button.dataset.opLayer;
@@ -1701,6 +1708,7 @@ function offerPerkChoices() {
   const run = state.dayRun;
   run.perkOffered = true;
   run.selectionPaused = true;
+  run.overlayMode = 'perk';
   const count = state.systems.extraPerkChoice ? 4 : 3;
   const options = shuffle([...PERK_POOL]).slice(0, count);
   elements.perkOptions.innerHTML = '';
@@ -1725,6 +1733,7 @@ function offerPerkChoices() {
 }
 
 function closePerkOverlay() {
+  state.dayRun.overlayMode = null;
   state.dayRun.selectionPaused = false;
   elements.perkOverlay.classList.add('hidden');
   elements.perkOverlay.setAttribute('aria-hidden', 'true');
@@ -1734,6 +1743,7 @@ function offerDayEvent() {
   const run = state.dayRun;
   run.eventOffered = true;
   run.selectionPaused = true;
+  run.overlayMode = 'event';
   const eventDef = chooseRandom(DAY_EVENT_DEFS);
   run.eventId = eventDef.id;
   elements.eventTitle.textContent = eventDef.title;
@@ -1762,6 +1772,7 @@ function closeEventOverlay() {
   if (!elements.eventOverlay) {
     return;
   }
+  state.dayRun.overlayMode = null;
   if (state.dayRun.active) {
     state.dayRun.selectionPaused = false;
   }
@@ -1867,6 +1878,8 @@ function renderAll() {
 
 function renderTabs() {
   elements.achievementsTabButton.classList.toggle('hidden', !state.systems.achievementsTabUnlocked);
+  const codexButton = elements.tabs.querySelector('[data-tab="codex"]');
+  codexButton?.classList.toggle('hidden', !state.systems.codexUnlocked);
   for (const button of document.querySelectorAll('.tab-button')) {
     button.classList.toggle('active', button.dataset.tab === state.currentTab);
   }
@@ -1874,6 +1887,10 @@ function renderTabs() {
     panel.classList.toggle('active', panel.dataset.panel === state.currentTab);
   }
   if (state.currentTab === 'achievements' && !state.systems.achievementsTabUnlocked) {
+    state.currentTab = 'operations';
+    renderTabs();
+  }
+  if (state.currentTab === 'codex' && !state.systems.codexUnlocked) {
     state.currentTab = 'operations';
     renderTabs();
   }
@@ -1901,7 +1918,9 @@ function renderOperations(includePrepOptions = true) {
     : 'ready';
   elements.dayStatus.textContent = run.active
     ? run.selectionPaused
-      ? '強化選択中'
+      ? run.overlayMode === 'event'
+        ? 'イベント対応中'
+        : '強化選択中'
       : '営業中'
     : '準備中';
   elements.dailyModifierName.textContent = run.modifierName;
@@ -1957,13 +1976,21 @@ function renderLastResult() {
 }
 
 function renderOperationLayerState() {
+  const hasResult = Boolean(state.lastResult);
+  const requestedView =
+    !hasResult && state.operationView === 'result' ? 'pre' : state.operationView;
   const view = state.dayRun.active
-    ? state.operationView === 'result'
+    ? requestedView === 'result'
       ? 'live'
-      : state.operationView
-    : state.operationView;
+      : requestedView
+    : requestedView;
   elements.operationLayerTabs?.querySelectorAll('[data-op-layer]').forEach((button) => {
     button.classList.toggle('active', button.dataset.opLayer === view);
+    if (button.dataset.opLayer === 'result') {
+      button.disabled = !hasResult;
+    } else {
+      button.disabled = false;
+    }
   });
 
   const showPre = view === 'pre';
