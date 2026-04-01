@@ -1,4 +1,5 @@
 const STORAGE_KEY = 'cuteCafeIdleSaveV1';
+const APP_VERSION = '1.0.0';
 
 const DAILY_MODIFIERS = [
   {
@@ -643,6 +644,7 @@ const elements = {
   toastStack: document.getElementById('toast-stack'),
   achievementsTabButton: document.getElementById('achievements-tab-button'),
   tabs: document.getElementById('tabs'),
+  versionLabel: document.getElementById('version-label'),
 };
 
 const state = loadState();
@@ -655,6 +657,9 @@ function init() {
   bindEvents();
   ensureStateIntegrity();
   renderAll();
+  if (elements.versionLabel) {
+    elements.versionLabel.textContent = `Version ${APP_VERSION}`;
+  }
   document.body.dataset.gameReady = 'true';
   tickerHandle = window.setInterval(tick, 250);
   saveHandle = window.setInterval(() => saveState(state), 5000);

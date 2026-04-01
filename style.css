@@ -30,8 +30,13 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
+}
+
+a {
+  color: inherit;
 }
 
 .page-shell {
@@ -153,7 +158,8 @@ h1 {
 .boost-button,
 .tree-button,
 .perk-button,
-.danger-button {
+.danger-button,
+.cta-link {
   border: none;
   border-radius: 999px;
   cursor: pointer;
@@ -408,12 +414,22 @@ h1 {
 .cta-button,
 .ghost-button,
 .perk-button,
-.danger-button {
+.danger-button,
+.cta-link {
   padding: 13px 18px;
   font-weight: 700;
 }
 
 .cta-button {
+  background: linear-gradient(135deg, #f7b267, #f08b7b);
+  color: #fffdfb;
+}
+
+.cta-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
   background: linear-gradient(135deg, #f7b267, #f08b7b);
   color: #fffdfb;
 }
@@ -434,6 +450,7 @@ h1 {
 .tree-button:hover,
 .perk-button:hover,
 .danger-button:hover,
+.cta-link:hover,
 .tab-button:hover {
   transform: translateY(-1px);
 }
@@ -692,6 +709,13 @@ h1 {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+.page-footer {
+  padding: 10px 20px 26px;
+  text-align: center;
+  color: var(--subtle);
+  font-size: 0.82rem;
 }
 
 @media (max-width: 960px) {
