@@ -1,5 +1,5 @@
 const STORAGE_KEY = 'cuteCafeIdleSaveV1';
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.3.0';
 
 const DAILY_MODIFIERS = [
   {
@@ -632,6 +632,10 @@ const COMBO_DEFS = [
     id: 'strawberryShowcase',
     name: 'いちご映えセット',
     description: 'いちごラテとショーケース推しで写真映えが広がります。',
+    hint: '営業スタイルとおすすめメニューの相性を試してみる',
+    unlock(state) {
+      return state.systems.comboRecipeUnlocked;
+    },
     matches(preDay) {
       return (
         preDay.selectedMenuId === 'strawberryLatte' && preDay.selectedStyleId === 'sweetShowcase'
@@ -647,6 +651,10 @@ const COMBO_DEFS = [
     id: 'cookieRegulars',
     name: 'おかえりプレート',
     description: 'クッキー盛りと常連メモでいつものお客さんが増えます。',
+    hint: '仕込みとおすすめメニューを組み合わせる',
+    unlock(state) {
+      return state.systems.comboRecipeUnlocked;
+    },
     matches(preDay) {
       return preDay.selectedMenuId === 'cookiePlate' && preDay.selectedPrepId === 'regularNotes';
     },
@@ -660,6 +668,10 @@ const COMBO_DEFS = [
     id: 'puddingCheck',
     name: 'ごほうび追い風',
     description: 'プリンと最終チェックがかみ合い、ブースト回りが軽くなります。',
+    hint: '実績を重ねると甘いごほうび系の組み合わせが見えてきます',
+    unlock(state) {
+      return state.systems.comboRecipeUnlocked && getAchievementCount() >= 6;
+    },
     matches(preDay) {
       return preDay.selectedMenuId === 'rewardPudding' && preDay.selectedPrepId === 'boostCheck';
     },
@@ -673,6 +685,10 @@ const COMBO_DEFS = [
     id: 'takeoutCookie',
     name: '寄り道おやつ便',
     description: 'テイクアウトデーにクッキー盛りを合わせて客足をさらに集めます。',
+    hint: '特別営業とおすすめメニューを合わせる',
+    unlock(state) {
+      return state.systems.comboRecipeUnlocked && state.systems.specialServiceUnlocked;
+    },
     matches(preDay) {
       return preDay.selectedServiceId === 'takeoutRush' && preDay.selectedMenuId === 'cookiePlate';
     },
@@ -686,6 +702,10 @@ const COMBO_DEFS = [
     id: 'nightLatte',
     name: '夜ふかしラテ時間',
     description: '夜カフェ営業といちごラテでゆったりした高単価営業になります。',
+    hint: 'いくつかコンボを見つけると、夜向けの組み合わせが解放されます',
+    unlock(state) {
+      return state.systems.comboRecipeUnlocked && state.discoveredCombos.length >= 2;
+    },
     matches(preDay) {
       return (
         preDay.selectedServiceId === 'nightCafe' && preDay.selectedMenuId === 'strawberryLatte'
@@ -696,6 +716,78 @@ const COMBO_DEFS = [
       run.reputationGainMultiplier *= 1.12;
       run.notes.push('本日のコンボ: 夜ふかしラテ時間');
     },
+  },
+];
+
+const DAY_EVENT_DEFS = [
+  {
+    id: 'photoRequest',
+    title: '写真を撮ってもいいですか？',
+    description: '映える席でお客さんが撮影の相談をしてきました。',
+    choices: [
+      {
+        label: '撮影しやすく整える',
+        detail: '評判が伸びやすくなります。',
+        apply(run) {
+          run.reputationGainMultiplier *= 1.18;
+          run.notes.push('営業中イベント: 撮影しやすく整える');
+        },
+      },
+      {
+        label: 'いつもの流れを優先',
+        detail: '売上ペースを少し安定させます。',
+        apply(run) {
+          run.salesMultiplier *= 1.08;
+          run.notes.push('営業中イベント: いつもの流れを優先');
+        },
+      },
+    ],
+  },
+  {
+    id: 'extraBatch',
+    title: '焼きたてをもう一回出す？',
+    description: '人気の焼き菓子が早めに減ってきました。',
+    choices: [
+      {
+        label: '追加で焼く',
+        detail: '来客が少し増えます。',
+        apply(run) {
+          run.visitorMultiplier *= 1.12;
+          run.notes.push('営業中イベント: 追加で焼く');
+        },
+      },
+      {
+        label: '丁寧に盛りつける',
+        detail: '客単価を少し上げます。',
+        apply(run) {
+          run.priceMultiplier *= 1.1;
+          run.notes.push('営業中イベント: 丁寧に盛りつける');
+        },
+      },
+    ],
+  },
+  {
+    id: 'regularRequest',
+    title: '常連さんからのひとこと',
+    description: 'いつものお客さんが今日は少し違う気分みたいです。',
+    choices: [
+      {
+        label: '会話を楽しむ',
+        detail: '目標達成時の評判が増えます。',
+        apply(run) {
+          run.reputationOnTargetBonus += 1;
+          run.notes.push('営業中イベント: 会話を楽しむ');
+        },
+      },
+      {
+        label: 'おすすめを勧める',
+        detail: '今日の売上に少し補正がかかります。',
+        apply(run) {
+          run.salesMultiplier *= 1.07;
+          run.notes.push('営業中イベント: おすすめを勧める');
+        },
+      },
+    ],
   },
 ];
 
@@ -777,6 +869,17 @@ const RESEARCH_NODES = [
       state.systems.comboRecipeUnlocked = true;
     },
   },
+  {
+    id: 'serviceMoments',
+    name: '接客メモ',
+    cost: 5,
+    description: '営業中に小さなできごとが起こり、その日の流れを選べるようになります。',
+    effectText: '営業中イベントが発生',
+    requires: ['serviceStyle'],
+    apply(state) {
+      state.systems.dayEventUnlocked = true;
+    },
+  },
 ];
 
 const elements = {
@@ -838,6 +941,8 @@ let saveHandle = 0;
 init();
 
 function init() {
+  ensureDynamicUi();
+  cacheDynamicElements();
   bindEvents();
   ensureStateIntegrity();
   renderAll();
@@ -847,6 +952,115 @@ function init() {
   document.body.dataset.gameReady = 'true';
   tickerHandle = window.setInterval(tick, 250);
   saveHandle = window.setInterval(() => saveState(state), 5000);
+}
+
+function ensureDynamicUi() {
+  if (!elements.tabs.querySelector('[data-tab="codex"]')) {
+    const codexButton = document.createElement('button');
+    codexButton.className = 'tab-button';
+    codexButton.dataset.tab = 'codex';
+    codexButton.textContent = '図鑑';
+    const researchButton = elements.tabs.querySelector('[data-tab="research"]');
+    elements.tabs.insertBefore(codexButton, researchButton);
+  }
+
+  const operationsPanel = document.querySelector('[data-panel="operations"] .panel.primary');
+  if (operationsPanel && !document.getElementById('operation-layer-tabs')) {
+    const layerTabs = document.createElement('div');
+    layerTabs.className = 'operation-layers';
+    layerTabs.id = 'operation-layer-tabs';
+    layerTabs.innerHTML = `
+      <button class="layer-chip active" data-op-layer="pre">営業前</button>
+      <button class="layer-chip" data-op-layer="live">営業中</button>
+      <button class="layer-chip" data-op-layer="result">結果</button>
+    `;
+    const panelHead = operationsPanel.querySelector('.panel-head');
+    panelHead?.insertAdjacentElement('afterend', layerTabs);
+  }
+
+  document.querySelector('.progress-block')?.setAttribute('id', 'progress-block');
+  document.querySelector('.ops-stats')?.setAttribute('id', 'ops-stats-block');
+  document.querySelector('.prep-card')?.setAttribute('id', 'prep-card');
+  document.querySelector('.info-list')?.setAttribute('id', 'info-list-block');
+
+  const notesCards = document.querySelectorAll(
+    '[data-panel="operations"] .panel.secondary .notes-card',
+  );
+  notesCards[0]?.setAttribute('id', 'run-notes-card');
+  notesCards[1]?.setAttribute('id', 'result-card');
+
+  const infoList = document.getElementById('info-list-block');
+  if (infoList && !document.getElementById('day-event-card')) {
+    const eventCard = document.createElement('div');
+    eventCard.className = 'notes-card';
+    eventCard.id = 'day-event-card';
+    eventCard.innerHTML = `
+      <h3>営業中のできごと</h3>
+      <div id="day-event-box" class="result-box">
+        研究で小さな営業イベントが解放されると、営業中にここへ表示されます。
+      </div>
+    `;
+    infoList.insertAdjacentElement('afterend', eventCard);
+  }
+
+  if (!document.querySelector('[data-panel="codex"]')) {
+    const panel = document.createElement('section');
+    panel.className = 'tab-panel';
+    panel.dataset.panel = 'codex';
+    panel.innerHTML = `
+      <section class="panel">
+        <div class="panel-head">
+          <div>
+            <p class="panel-kicker">発見メモ</p>
+            <h2>コンボ図鑑</h2>
+          </div>
+          <div class="status-pill" id="codex-summary">0 / 0発見</div>
+        </div>
+        <p class="tree-note">
+          組み合わせを見つけると図鑑に記録されます。条件が足りないコンボは、うっすらとだけ見えます。
+        </p>
+        <div class="codex-grid" id="codex-grid"></div>
+      </section>
+    `;
+    const researchPanel = document.querySelector('[data-panel="research"]');
+    researchPanel?.parentElement?.insertBefore(panel, researchPanel);
+  }
+
+  if (!document.getElementById('event-overlay')) {
+    const eventOverlay = document.createElement('div');
+    eventOverlay.className = 'overlay hidden';
+    eventOverlay.id = 'event-overlay';
+    eventOverlay.setAttribute('aria-hidden', 'true');
+    eventOverlay.innerHTML = `
+      <div class="overlay-card">
+        <p class="panel-kicker">営業中イベント</p>
+        <h2 id="event-title">小さなできごと</h2>
+        <p class="overlay-copy" id="event-description">
+          営業中のちょっとした判断で、その日の流れが少し変わります。
+        </p>
+        <div class="perk-options" id="event-options"></div>
+      </div>
+    `;
+    elements.toastStack.insertAdjacentElement('beforebegin', eventOverlay);
+  }
+}
+
+function cacheDynamicElements() {
+  elements.operationLayerTabs = document.getElementById('operation-layer-tabs');
+  elements.progressBlock = document.getElementById('progress-block');
+  elements.opsStatsBlock = document.getElementById('ops-stats-block');
+  elements.prepCard = document.getElementById('prep-card');
+  elements.infoListBlock = document.getElementById('info-list-block');
+  elements.dayEventCard = document.getElementById('day-event-card');
+  elements.dayEventBox = document.getElementById('day-event-box');
+  elements.runNotesCard = document.getElementById('run-notes-card');
+  elements.resultCard = document.getElementById('result-card');
+  elements.codexGrid = document.getElementById('codex-grid');
+  elements.codexSummary = document.getElementById('codex-summary');
+  elements.eventOverlay = document.getElementById('event-overlay');
+  elements.eventTitle = document.getElementById('event-title');
+  elements.eventDescription = document.getElementById('event-description');
+  elements.eventOptions = document.getElementById('event-options');
 }
 
 function createDefaultState() {
@@ -860,6 +1074,7 @@ function createDefaultState() {
     achievementsUnlocked: [],
     unlockedNodes: [],
     researchUnlocked: [],
+    discoveredCombos: [],
     systems: {
       achievementsTabUnlocked: false,
       secondBoostUnlocked: false,
@@ -873,6 +1088,7 @@ function createDefaultState() {
       comboRecipeUnlocked: false,
       specialServiceUnlocked: false,
       festivalServiceUnlocked: false,
+      dayEventUnlocked: false,
     },
     preDay: {
       selectedBoostIds: [],
@@ -904,6 +1120,7 @@ function createDefaultState() {
     dayRun: createIdleRunState(),
     lastResult: null,
     currentTab: 'operations',
+    operationView: 'pre',
   };
 }
 
@@ -943,6 +1160,9 @@ function createIdleRunState() {
     styleId: null,
     serviceId: null,
     comboId: null,
+    eventId: null,
+    eventOffered: false,
+    eventResolved: false,
     startingBoosts: [],
     boostStates: {},
     perkOffered: false,
@@ -977,8 +1197,16 @@ function ensureStateIntegrity() {
     : [];
   state.unlockedNodes = Array.isArray(state.unlockedNodes) ? state.unlockedNodes : [];
   state.researchUnlocked = Array.isArray(state.researchUnlocked) ? state.researchUnlocked : [];
-  if (!['operations', 'achievements', 'tree', 'research', 'settings'].includes(state.currentTab)) {
+  state.discoveredCombos = Array.isArray(state.discoveredCombos) ? state.discoveredCombos : [];
+  if (
+    !['operations', 'achievements', 'codex', 'tree', 'research', 'settings'].includes(
+      state.currentTab,
+    )
+  ) {
     state.currentTab = 'operations';
+  }
+  if (!['pre', 'live', 'result'].includes(state.operationView)) {
+    state.operationView = 'pre';
   }
   initializeBoostStates(state.dayRun);
   rebuildUnlockEffects();
@@ -1099,10 +1327,23 @@ function getSpecialServiceById(serviceId) {
 }
 
 function getActiveComboDefinition(preDay = state.preDay) {
-  if (!state.systems.comboRecipeUnlocked) {
-    return null;
+  return COMBO_DEFS.find((entry) => isComboUnlocked(entry) && entry.matches(preDay)) || null;
+}
+
+function isComboUnlocked(combo) {
+  return combo.unlock ? combo.unlock(state) : state.systems.comboRecipeUnlocked;
+}
+
+function discoverCombo(comboId) {
+  if (state.discoveredCombos.includes(comboId)) {
+    return;
   }
-  return COMBO_DEFS.find((entry) => entry.matches(preDay)) || null;
+  const combo = COMBO_DEFS.find((entry) => entry.id === comboId);
+  if (!combo) {
+    return;
+  }
+  state.discoveredCombos.push(comboId);
+  showToast('新しいコンボを発見', `${combo.name} が図鑑に記録されました。`);
 }
 
 function hasResearch(researchId) {
@@ -1161,6 +1402,16 @@ function bindEvents() {
     saveState(state);
   });
 
+  elements.operationLayerTabs?.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-op-layer]');
+    if (!button) {
+      return;
+    }
+    state.operationView = button.dataset.opLayer;
+    renderOperations(false);
+    saveState(state);
+  });
+
   elements.boostGrid.addEventListener('click', (event) => {
     const button = event.target.closest('[data-boost-id]');
     if (!button || button.disabled) {
@@ -1195,6 +1446,8 @@ function startDay() {
   initializeDayTarget(state.dayRun);
   initializeBoostStates(state.dayRun);
   applyStartingBoosts(state.dayRun);
+  closeEventOverlay();
+  state.operationView = 'live';
   renderAll();
   saveState(state);
 }
@@ -1227,7 +1480,8 @@ function initializeDayTarget(run) {
   );
 }
 
-function applyPreDaySelections(run) {
+function applyPreDaySelections(run, options = {}) {
+  const { discover = true } = options;
   for (const boostId of state.preDay.selectedBoostIds) {
     const boost = PRE_DAY_BOOSTS.find((entry) => entry.id === boostId);
     if (boost) {
@@ -1264,6 +1518,9 @@ function applyPreDaySelections(run) {
   if (combo) {
     run.comboId = combo.id;
     combo.apply(run);
+    if (discover) {
+      discoverCombo(combo.id);
+    }
   }
 }
 
@@ -1300,6 +1557,16 @@ function tick() {
   const perkUnlockTime = run.durationMs * 0.38 * run.perkOfferTimeMultiplier;
   if (!run.perkOffered && run.elapsedMs >= perkUnlockTime) {
     offerPerkChoices();
+  }
+
+  const eventUnlockTime = run.durationMs * 0.62;
+  if (
+    state.systems.dayEventUnlocked &&
+    !run.eventOffered &&
+    !run.selectionPaused &&
+    run.elapsedMs >= eventUnlockTime
+  ) {
+    offerDayEvent();
   }
 
   if (run.elapsedMs >= run.durationMs) {
@@ -1401,6 +1668,7 @@ function finishDay() {
   state.dayRun = createIdleRunState();
   state.preDay.modifierRerollUsed = false;
   state.preDay.forecastModifierId = chooseRandom(DAILY_MODIFIERS).id;
+  state.operationView = 'result';
   initializeBoostStates(state.dayRun);
   ensurePreDaySelections();
   renderAll();
@@ -1460,6 +1728,45 @@ function closePerkOverlay() {
   state.dayRun.selectionPaused = false;
   elements.perkOverlay.classList.add('hidden');
   elements.perkOverlay.setAttribute('aria-hidden', 'true');
+}
+
+function offerDayEvent() {
+  const run = state.dayRun;
+  run.eventOffered = true;
+  run.selectionPaused = true;
+  const eventDef = chooseRandom(DAY_EVENT_DEFS);
+  run.eventId = eventDef.id;
+  elements.eventTitle.textContent = eventDef.title;
+  elements.eventDescription.textContent = eventDef.description;
+  elements.eventOptions.innerHTML = '';
+  for (const choice of eventDef.choices) {
+    const button = document.createElement('button');
+    button.className = 'perk-button';
+    button.innerHTML = `<strong>${choice.label}</strong><div>${choice.detail}</div>`;
+    button.addEventListener('click', () => {
+      choice.apply(run);
+      run.eventResolved = true;
+      renderDayEventStatus();
+      closeEventOverlay();
+      renderAll();
+      saveState(state);
+    });
+    elements.eventOptions.appendChild(button);
+  }
+  renderDayEventStatus(eventDef);
+  elements.eventOverlay.classList.remove('hidden');
+  elements.eventOverlay.setAttribute('aria-hidden', 'false');
+}
+
+function closeEventOverlay() {
+  if (!elements.eventOverlay) {
+    return;
+  }
+  if (state.dayRun.active) {
+    state.dayRun.selectionPaused = false;
+  }
+  elements.eventOverlay.classList.add('hidden');
+  elements.eventOverlay.setAttribute('aria-hidden', 'true');
 }
 
 function getAvailableBoosts() {
@@ -1552,6 +1859,7 @@ function renderAll() {
   renderOperations();
   renderBoosts();
   renderAchievements();
+  renderCodex();
   renderResearch();
   renderTree();
   renderSettings();
@@ -1613,6 +1921,8 @@ function renderOperations(includePrepOptions = true) {
   elements.gradeBonusRow.classList.toggle('hidden', getAchievementCount() < 6);
   elements.gradeBonusValue.textContent = `x${formatNumber(getAchievementBonusMultiplier(), 2)}`;
   elements.startDayButton.disabled = run.active;
+  renderOperationLayerState();
+  renderDayEventStatus();
   if (includePrepOptions) {
     renderPrepOptions();
   }
@@ -1639,9 +1949,91 @@ function renderLastResult() {
   const result = state.lastResult;
   const achievementText =
     result.achievements.length > 0 ? ` / 新実績: ${result.achievements.join('、')}` : '';
+  const flavorParts = [result.styleName, result.serviceName, result.comboName].filter(Boolean);
+  const flavorText = flavorParts.length > 0 ? ` / ${flavorParts.join(' / ')}` : '';
   elements.lastResultBox.textContent =
     `${result.dayNumber}日目: 売上 ${formatNumber(result.sales)} / 目標 ${formatNumber(result.targetValue)}、来客 ${result.customers}人、評判 +${result.reputationGain}、解放ポイント +${result.unlockGain}、ひらめき +${result.insightGain}` +
-    ` / ${result.modifierName}${result.achievedTarget ? ' / 売上目標達成' : ' / 売上目標は未達'}${achievementText}`;
+    ` / ${result.modifierName}${flavorText}${result.achievedTarget ? ' / 売上目標達成' : ' / 売上目標は未達'}${achievementText}`;
+}
+
+function renderOperationLayerState() {
+  const view = state.dayRun.active
+    ? state.operationView === 'result'
+      ? 'live'
+      : state.operationView
+    : state.operationView;
+  elements.operationLayerTabs?.querySelectorAll('[data-op-layer]').forEach((button) => {
+    button.classList.toggle('active', button.dataset.opLayer === view);
+  });
+
+  const showPre = view === 'pre';
+  const showLive = view === 'live';
+  const showResult = view === 'result';
+
+  elements.prepCard?.classList.toggle('hidden', !showPre);
+  elements.boostGrid?.classList.toggle('hidden', !showLive);
+  elements.progressBlock?.classList.toggle('hidden', showResult);
+  elements.opsStatsBlock?.classList.toggle('hidden', showResult);
+  elements.infoListBlock?.classList.toggle('hidden', showResult);
+  elements.dayEventCard?.classList.toggle('hidden', !showLive);
+  elements.runNotesCard?.classList.toggle('hidden', showResult);
+  elements.resultCard?.classList.toggle('hidden', !showResult);
+}
+
+function renderDayEventStatus(eventDef = null) {
+  if (!elements.dayEventBox) {
+    return;
+  }
+  if (!state.systems.dayEventUnlocked) {
+    elements.dayEventBox.textContent =
+      '研究で営業中イベントが解放されると、営業中に小さな判断が増えます。';
+    return;
+  }
+  if (!state.dayRun.active) {
+    elements.dayEventBox.textContent = '営業中に1回だけ、小さなできごとが起こります。';
+    return;
+  }
+  if (!state.dayRun.eventOffered) {
+    elements.dayEventBox.textContent =
+      '今日はまだ落ち着いています。営業が進むとできごとが起こるかもしれません。';
+    return;
+  }
+  if (!state.dayRun.eventResolved) {
+    const currentEvent =
+      eventDef || DAY_EVENT_DEFS.find((entry) => entry.id === state.dayRun.eventId) || null;
+    elements.dayEventBox.textContent = currentEvent
+      ? `${currentEvent.title} の対応を選べます。`
+      : '営業中のできごとが発生しています。';
+    return;
+  }
+  elements.dayEventBox.textContent =
+    '営業中のできごとは対応済みです。今日の流れに反映されています。';
+}
+
+function renderCodex() {
+  if (!elements.codexGrid || !elements.codexSummary) {
+    return;
+  }
+  elements.codexSummary.textContent = `${state.discoveredCombos.length} / ${COMBO_DEFS.length}発見`;
+  elements.codexGrid.innerHTML = COMBO_DEFS.map((combo) => {
+    const discovered = state.discoveredCombos.includes(combo.id);
+    const unlocked = isComboUnlocked(combo);
+    const cardClass = discovered ? 'discovered' : unlocked ? 'available' : 'locked';
+    const title = discovered ? combo.name : unlocked ? '未発見コンボ' : '？？？';
+    const body = discovered
+      ? combo.description
+      : unlocked
+        ? combo.hint || 'まだ見つかっていません。'
+        : combo.hint || '条件を満たすと見えてきます。';
+    const status = discovered ? '発見済み' : unlocked ? '未発見' : '条件未達';
+    return `
+      <article class="codex-card ${cardClass}">
+        <h3>${title}</h3>
+        <p>${body}</p>
+        <div class="reward">${status}</div>
+      </article>
+    `;
+  }).join('');
 }
 
 function renderBoosts() {
@@ -2137,6 +2529,7 @@ function applyLoadedState(source) {
   ensureStateIntegrity();
   if (state.dayRun.active) {
     closePerkOverlay();
+    closeEventOverlay();
     state.dayRun.active = false;
     state.dayRun.selectionPaused = false;
   }
@@ -2207,7 +2600,7 @@ function getPreviewTargetValue() {
   previewRun.salesMultiplier = modifier.effectMultiplier;
   previewRun.reputationMultiplier = modifier.reputationMultiplier;
   previewRun.effectMultiplier = modifier.effectMultiplier;
-  applyPreDaySelections(previewRun);
+  applyPreDaySelections(previewRun, { discover: false });
   initializeDayTarget(previewRun);
   return Math.round(previewRun.dayTarget * previewRun.targetMultiplier);
 }

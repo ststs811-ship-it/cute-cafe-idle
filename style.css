@@ -327,6 +327,35 @@ h3 {
   box-shadow: 0 10px 22px rgba(124, 91, 82, 0.12);
 }
 
+.operation-layers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0 0 18px;
+}
+
+.layer-chip {
+  padding: 9px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-pill);
+  background: #fffaf8;
+  color: var(--text-soft);
+  font-weight: 700;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.layer-chip.active {
+  background: #fff1ef;
+  border-color: #d9b7ac;
+  color: var(--brown-strong);
+  box-shadow: 0 8px 16px rgba(124, 91, 82, 0.09);
+}
+
 .tab-panels,
 .tab-panel.active {
   display: block;
@@ -618,7 +647,8 @@ h3 {
 .tree-grid,
 .perk-options,
 .achievement-unlocks,
-.settings-grid {
+.settings-grid,
+.codex-grid {
   display: grid;
   gap: 14px;
 }
@@ -921,6 +951,34 @@ h3 {
 
 .research-grid {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.codex-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.codex-card {
+  padding: 18px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--line);
+  background: #ffffff;
+  box-shadow: var(--shadow-xs);
+}
+
+.codex-card.locked {
+  opacity: 0.82;
+  background: #fffaf8;
+}
+
+.codex-card.available {
+  border-style: dashed;
+  background: #fffdfb;
+}
+
+.codex-card.discovered {
+  border-color: #d8b5a7;
+  background: #fff4f3;
+  box-shadow: 0 12px 22px rgba(135, 96, 88, 0.1);
 }
 
 .research-card {
