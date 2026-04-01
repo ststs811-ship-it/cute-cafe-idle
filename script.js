@@ -3616,6 +3616,15 @@ var EXTRA_ACHIEVEMENTS = [
     reward: '解放ポイント +1',
     condition: (state) => state.discoveredCombos.includes('nightLatte'),
   },
+  {
+    id: 'perfectCollection',
+    name: 'きょうも満点カフェ',
+    description: 'ほかの実績をすべて達成して、実績ノートを完成させる',
+    reward: 'コンプリートの記念リボン',
+    condition: (state) =>
+      state.achievementsUnlocked.filter((id) => id !== 'perfectCollection').length >=
+      getAchievementCatalog().length - 1,
+  },
 ];
 
 var EXTRA_RESEARCH_NODES = [
